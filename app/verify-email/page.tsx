@@ -1,11 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { API_ENDPOINTS, apiRequest } from '@/lib/api';
 
-export default function VerifyEmailPage() {
+function VerifyEmailContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
@@ -102,5 +102,35 @@ export default function VerifyEmailPage() {
         }
       `}</style>
     </div>
+  );
+}
+
+export default function VerifyEmailPage() {
+  return (
+    <Suspense fallback={
+      <div className="login-page">
+        <div className="login-container">
+          <div className="login-form">
+            <div style={{ textAlign: 'center' }}>
+              <h1 className="login-title" style={{ marginBottom: '2rem' }}>
+                Verifying Email...
+              </h1>
+              <div style={{ 
+                width: '50px', 
+                height: '50px', 
+                border: '4px solid #f3f3f3',
+                borderTop: '4px solid #000',
+                borderRadius: '50%',
+                animation: 'spin 1s linear infinite',
+                margin: '0 auto 20px'
+              }} />
+              <p>Please wait while we verify your email...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    }>
+      <VerifyEmailContent />
+    </Suspense>
   );
 }
