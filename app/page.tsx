@@ -76,6 +76,7 @@ export default function Home() {
             <ul className="nav-links">
               <li><a href="#features" className="nav-link">Features</a></li>
               <li><a href="#pricing" className="nav-link">Pricing</a></li>
+              <li><a href="/blogs" className="nav-link">Blog</a></li>
               <li><a href="#" className="nav-link">About</a></li>
             </ul>
             <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
@@ -105,7 +106,7 @@ export default function Home() {
           </div>
 
           <div className="metrics-container">
-            <div className="metrics">💪 Trusted by 10,000+ creators</div>
+            <div className="metrics">💪  Automate your discord with crypto</div>
             <div className="circles">
               <div className="circle"></div>
               <div className="circle"></div>
