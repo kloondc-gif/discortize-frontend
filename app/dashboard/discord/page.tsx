@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
@@ -26,7 +26,7 @@ interface GuildSettings {
   enabled: boolean;
 }
 
-export default function DiscordConnectionPage() {
+function DiscordConnectionContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [loading, setLoading] = useState(true);
@@ -763,5 +763,13 @@ export default function DiscordConnectionPage() {
         </div>
       </footer>
     </div>
+  );
+}
+
+export default function DiscordConnectionPage() {
+  return (
+    <Suspense fallback={<div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>Loading...</div>}>
+      <DiscordConnectionContent />
+    </Suspense>
   );
 }
