@@ -68,6 +68,29 @@ export default function Home() {
         </motion.div>
       </motion.div>
 
+      {/* Organization Schema for Google */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': 'Organization',
+            name: 'Discortize',
+            url: 'https://discortize.com',
+            logo: 'https://discortize.com/favicon.png',
+            sameAs: [
+              'https://twitter.com/discortize',
+              'https://discord.gg/discortize',
+            ],
+            contactPoint: {
+              '@type': 'ContactPoint',
+              contactType: 'Customer Support',
+              url: 'https://discortize.com',
+            },
+          }),
+        }}
+      />
+
       {/* JSON-LD Structured Data */}
       <script
         type="application/ld+json"
