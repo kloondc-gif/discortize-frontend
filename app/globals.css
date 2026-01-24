@@ -110,10 +110,9 @@ body {
 }
 
 .logo-img {
-  height: 45px !important;
+  height: 50px !important;
   width: auto;
-  min-width: 180px;
-  max-width: 220px;
+  max-width: 200px;
   object-fit: contain;
 }
 
