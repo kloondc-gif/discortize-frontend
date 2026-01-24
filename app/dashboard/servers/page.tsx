@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter, useSearchParams, usePathname } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { startTokenRefresh, stopTokenRefresh } from '@/lib/api';
 
@@ -22,17 +22,15 @@ interface DiscordGuild {
   bot_in_server: boolean;
 }
 
-export default function DashboardPage() {
+export default function ServersPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const pathname = usePathname();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [discordUsername, setDiscordUsername] = useState<string | null>(null);
-  const [activeView, setActiveView] = useState<string | null>(null);
   const [guilds, setGuilds] = useState<DiscordGuild[]>([]);
   const [loadingGuilds, setLoadingGuilds] = useState(false);
   const [discordClientId, setDiscordClientId] = useState<string>('');
+  const [checkingConnection, setCheckingConnection] = useState(true);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -50,17 +48,8 @@ export default function DashboardPage() {
       setLoading(false);
       startTokenRefresh();
       
-      // Fetch Discord Client ID
       fetchClientId();
-
-      // Handle OAuth callback
-      const code = searchParams.get('code');
-      if (code) {
-        handleOAuthCallback(code, token);
-      } else {
-        // Check Discord connection
-        checkDiscordConnection(token);
-      }
+      checkDiscordConnection(token);
     } catch (error) {
       console.error('Error parsing user data:', error);
       router.push('/login');
@@ -70,7 +59,7 @@ export default function DashboardPage() {
     return () => {
       stopTokenRefresh();
     };
-  }, [router, searchParams]);
+  }, [router]);
 
   const fetchClientId = async () => {
     try {
@@ -85,6 +74,7 @@ export default function DashboardPage() {
   };
 
   const checkDiscordConnection = async (token: string) => {
+    setCheckingConnection(true);
     try {
       const response = await fetch('http://localhost:8000/api/discord/connection', {
         headers: {
@@ -92,40 +82,54 @@ export default function DashboardPage() {
         }
       });
 
+      if (response.status === 401) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        localStorage.removeItem('refresh_token');
+        router.push('/');
+        return;
+      }
+
       if (response.ok) {
         const data = await response.json();
         if (data.connected && data.discord_user) {
           setDiscordUsername(data.discord_user.username);
+          fetchGuilds(token);
         }
       }
     } catch (error) {
       console.error('Error checking Discord connection:', error);
+    } finally {
+      setCheckingConnection(false);
     }
   };
 
-  const handleOAuthCallback = async (code: string, token: string) => {
+  const fetchGuilds = async (token?: string) => {
+    setLoadingGuilds(true);
     try {
-      const response = await fetch('http://localhost:8000/api/discord/callback', {
-        method: 'POST',
+      const authToken = token || localStorage.getItem('token');
+      const response = await fetch('http://localhost:8000/api/discord/guilds', {
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ code })
+          'Authorization': `Bearer ${authToken}`
+        }
       });
+
+      if (response.status === 401) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        localStorage.removeItem('refresh_token');
+        router.push('/');
+        return;
+      }
 
       if (response.ok) {
         const data = await response.json();
-        if (data.discord_user) {
-          setDiscordUsername(data.discord_user.username);
-        }
-        // Remove code from URL
-        window.history.replaceState({}, '', '/dashboard');
-      } else {
-        console.error('Failed to connect Discord account');
+        setGuilds(Array.isArray(data) ? data : (data.guilds || []));
       }
     } catch (error) {
-      console.error('Error handling Discord callback:', error);
+      console.error('Error fetching guilds:', error);
+    } finally {
+      setLoadingGuilds(false);
     }
   };
 
@@ -170,37 +174,6 @@ export default function DashboardPage() {
     localStorage.removeItem('refresh_token');
     router.push('/');
   };
-
-  const fetchGuilds = async () => {
-    setLoadingGuilds(true);
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:8000/api/discord/guilds', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setGuilds(data.guilds || []);
-      }
-    } catch (error) {
-      console.error('Error fetching guilds:', error);
-    } finally {
-      setLoadingGuilds(false);
-    }
-  };
-
-  const handleServersClick = () => {
-    router.push('/dashboard/servers');
-  };
-
-  useEffect(() => {
-    if (pathname === '/dashboard/servers' && guilds.length === 0 && discordUsername) {
-      fetchGuilds();
-    }
-  }, [pathname, discordUsername]);
 
   if (loading) {
     return (
@@ -279,32 +252,67 @@ export default function DashboardPage() {
           width: '240px'
         }}>
           {/* Connect Discord Button */}
-          <button
-            onClick={discordUsername ? undefined : connectDiscord}
-            style={{
-              padding: '0.75rem 1.25rem',
-              backgroundColor: '#000',
-              color: '#fff',
-              border: 'none',
-              borderRadius: '24px',
-              fontSize: '0.9rem',
-              fontWeight: '500',
-              cursor: discordUsername ? 'default' : 'pointer',
-              marginBottom: '1rem',
-              transition: 'background-color 0.2s',
-              textDecoration: 'none',
-              display: 'block',
-              textAlign: 'center'
-            }}
-            onMouseOver={(e) => !discordUsername && (e.currentTarget.style.backgroundColor = '#333')}
-            onMouseOut={(e) => !discordUsername && (e.currentTarget.style.backgroundColor = '#000')}
-          >
-            {discordUsername || 'Connect Discord'}
-          </button>
+          {checkingConnection ? (
+            <div
+              style={{
+                padding: '0.75rem 1.25rem',
+                backgroundColor: '#000',
+                color: '#fff',
+                border: 'none',
+                borderRadius: '24px',
+                fontSize: '0.9rem',
+                fontWeight: '500',
+                marginBottom: '1rem',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '0.5rem'
+              }}
+            >
+              <div style={{
+                border: '2px solid #fff',
+                borderTop: '2px solid transparent',
+                borderRadius: '50%',
+                width: '16px',
+                height: '16px',
+                animation: 'spin 1s linear infinite'
+              }} />
+              <style jsx>{`
+                @keyframes spin {
+                  0% { transform: rotate(0deg); }
+                  100% { transform: rotate(360deg); }
+                }
+              `}</style>
+              Checking...
+            </div>
+          ) : (
+            <button
+              onClick={discordUsername ? undefined : connectDiscord}
+              style={{
+                padding: '0.75rem 1.25rem',
+                backgroundColor: '#000',
+                color: '#fff',
+                border: 'none',
+                borderRadius: '24px',
+                fontSize: '0.9rem',
+                fontWeight: '500',
+                cursor: discordUsername ? 'default' : 'pointer',
+                marginBottom: '1rem',
+                transition: 'background-color 0.2s',
+                textDecoration: 'none',
+                display: 'block',
+                textAlign: 'center'
+              }}
+              onMouseOver={(e) => !discordUsername && (e.currentTarget.style.backgroundColor = '#333')}
+              onMouseOut={(e) => !discordUsername && (e.currentTarget.style.backgroundColor = '#000')}
+            >
+              {discordUsername || 'Connect Discord'}
+            </button>
+          )}
 
           {/* Menu Items */}
-          <button
-            onClick={handleServersClick}
+          <Link
+            href="/dashboard/servers"
             style={{
               display: 'flex',
               alignItems: 'center',
@@ -316,18 +324,12 @@ export default function DashboardPage() {
               fontWeight: '700',
               borderRadius: '16px',
               transition: 'background-color 0.2s',
-              backgroundColor: pathname === '/dashboard/servers' ? '#f5f5f5' : 'transparent',
-              border: 'none',
-              cursor: 'pointer',
-              width: '100%',
-              textAlign: 'left'
+              backgroundColor: '#f5f5f5'
             }}
-            onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#f5f5f5'}
-            onMouseOut={(e) => e.currentTarget.style.backgroundColor = pathname === '/dashboard/servers' ? '#f5f5f5' : 'transparent'}
           >
             <img src="/servers-svgrepo-com.svg" alt="" style={{ width: '20px', height: '20px' }} />
             Servers
-          </button>
+          </Link>
 
           <Link
             href="/dashboard/subscriptions"
@@ -443,137 +445,161 @@ export default function DashboardPage() {
           </Link>
         </div>
 
-        {/* Content Area */}
-        {pathname === '/dashboard/servers' && (
-          <div style={{
-            flex: 1,
-            paddingLeft: '3rem',
-            maxWidth: '900px'
+        {/* Servers Content */}
+        <div style={{
+          flex: 1,
+          paddingLeft: '5rem',
+          maxWidth: '900px'
+        }}>
+          <h2 style={{ 
+            fontSize: '1.575rem', 
+            fontWeight: '700', 
+            marginBottom: '1.5rem',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.75rem',
+            color: '#000'
           }}>
-            <h2 style={{ fontSize: '1.5rem', fontWeight: '700', marginBottom: '1.5rem' }}>Your Servers</h2>
-            
-            {!discordUsername ? (
+            <img src="/servers-svgrepo-com.svg" alt="" style={{ width: '29px', height: '29px' }} />
+            Servers
+          </h2>
+          
+          {checkingConnection ? (
+            <div style={{ textAlign: 'center', padding: '2rem' }}>
               <div style={{
-                padding: '2rem',
-                backgroundColor: '#f9f9f9',
-                borderRadius: '8px',
-                textAlign: 'center'
-              }}>
-                <p style={{ marginBottom: '1rem' }}>Connect your Discord account to view your servers</p>
-                <button
-                  onClick={connectDiscord}
+                border: '3px solid #000',
+                borderTop: '3px solid transparent',
+                borderRadius: '50%',
+                width: '40px',
+                height: '40px',
+                animation: 'spin 1s linear infinite',
+                margin: '0 auto'
+              }} />
+              <style jsx>{`
+                @keyframes spin {
+                  0% { transform: rotate(0deg); }
+                  100% { transform: rotate(360deg); }
+                }
+              `}</style>
+            </div>
+          ) : !discordUsername ? (
+            <div style={{
+              padding: '2rem',
+              backgroundColor: '#f9f9f9',
+              borderRadius: '8px',
+              textAlign: 'center'
+            }}>
+              <p style={{ marginBottom: '1rem' }}>Connect your Discord account to view your servers</p>
+              <button
+                onClick={connectDiscord}
+                style={{
+                  padding: '0.75rem 1.5rem',
+                  backgroundColor: '#000',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '6px',
+                  fontSize: '0.95rem',
+                  fontWeight: '500',
+                  cursor: 'pointer'
+                }}
+              >
+                Connect Discord
+              </button>
+            </div>
+          ) : loadingGuilds ? (
+            <div style={{ textAlign: 'center', padding: '2rem' }}>
+              <div style={{
+                border: '3px solid #000',
+                borderTop: '3px solid transparent',
+                borderRadius: '50%',
+                width: '40px',
+                height: '40px',
+                animation: 'spin 1s linear infinite',
+                margin: '0 auto'
+              }} />
+              <style jsx>{`
+                @keyframes spin {
+                  0% { transform: rotate(0deg); }
+                  100% { transform: rotate(360deg); }
+                }
+              `}</style>
+            </div>
+          ) : guilds.filter(guild => guild.bot_in_server).length === 0 ? (
+            <div style={{
+              padding: '2rem',
+              backgroundColor: '#f9f9f9',
+              borderRadius: '8px',
+              textAlign: 'center'
+            }}>
+              <p>No servers with bot found</p>
+            </div>
+          ) : (
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '1rem'
+            }}>
+              {guilds.filter(guild => guild.bot_in_server).map((guild) => (
+                <div
+                  key={guild.id}
                   style={{
-                    padding: '0.75rem 1.5rem',
-                    backgroundColor: '#000',
-                    color: '#fff',
-                    border: 'none',
-                    borderRadius: '6px',
-                    fontSize: '0.95rem',
-                    fontWeight: '500',
-                    cursor: 'pointer'
+                    padding: '1rem 1.5rem',
+                    backgroundColor: '#fff',
+                    border: '1px solid #e0e0e0',
+                    borderRadius: '8px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '1.5rem'
                   }}
                 >
-                  Connect Discord
-                </button>
-              </div>
-            ) : loadingGuilds ? (
-              <div style={{ textAlign: 'center', padding: '2rem' }}>
-                <div style={{
-                  border: '3px solid #000',
-                  borderTop: '3px solid transparent',
-                  borderRadius: '50%',
-                  width: '40px',
-                  height: '40px',
-                  animation: 'spin 1s linear infinite',
-                  margin: '0 auto'
-                }} />
-              </div>
-            ) : guilds.length === 0 ? (
-              <div style={{
-                padding: '2rem',
-                backgroundColor: '#f9f9f9',
-                borderRadius: '8px',
-                textAlign: 'center'
-              }}>
-                <p>No servers found</p>
-              </div>
-            ) : (
-              <div style={{
-                display: 'grid',
-                gap: '1rem',
-                gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))'
-              }}>
-                {guilds.map((guild) => (
-                  <div
-                    key={guild.id}
-                    style={{
-                      padding: '1.25rem',
-                      backgroundColor: '#fff',
-                      border: '1px solid #e0e0e0',
-                      borderRadius: '8px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '1rem'
-                    }}
-                  >
-                    {guild.icon ? (
-                      <img
-                        src={`https://cdn.discordapp.com/icons/${guild.id}/${guild.icon}.png`}
-                        alt={guild.name}
-                        style={{
-                          width: '48px',
-                          height: '48px',
-                          borderRadius: '50%'
-                        }}
-                      />
-                    ) : (
-                      <div style={{
+                  {guild.icon ? (
+                    <img
+                      src={`https://cdn.discordapp.com/icons/${guild.id}/${guild.icon}.png`}
+                      alt={guild.name}
+                      style={{
                         width: '48px',
                         height: '48px',
-                        borderRadius: '50%',
-                        backgroundColor: '#5865F2',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        color: '#fff',
-                        fontWeight: '600',
-                        fontSize: '1.25rem'
-                      }}>
-                        {guild.name.charAt(0).toUpperCase()}
-                      </div>
-                    )}
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontWeight: '600', marginBottom: '0.25rem' }}>{guild.name}</div>
-                      {guild.bot_in_server ? (
-                        <span style={{
-                          fontSize: '0.75rem',
-                          color: '#22c55e',
-                          fontWeight: '500'
-                        }}>
-                          ✓ Bot Active
-                        </span>
-                      ) : (
-                        <a
-                          href={`https://discord.com/oauth2/authorize?client_id=${discordClientId || ''}&permissions=8&scope=bot%20applications.commands&guild_id=${guild.id}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          style={{
-                            fontSize: '0.75rem',
-                            color: '#5865F2',
-                            textDecoration: 'none',
-                            fontWeight: '500'
-                          }}
-                        >
-                          Add Bot →
-                        </a>
-                      )}
+                        borderRadius: '50%'
+                      }}
+                    />
+                  ) : (
+                    <div style={{
+                      width: '48px',
+                      height: '48px',
+                      borderRadius: '50%',
+                      backgroundColor: '#5865F2',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: '#fff',
+                      fontWeight: '600',
+                      fontSize: '1.25rem'
+                    }}>
+                      {guild.name.charAt(0).toUpperCase()}
                     </div>
+                  )}
+                  <div style={{ flex: 1, fontWeight: '600', fontSize: '1rem' }}>
+                    {guild.name}
                   </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
+                  <button
+                    style={{
+                      padding: '0.5rem 1.5rem',
+                      backgroundColor: '#000',
+                      color: '#fff',
+                      border: 'none',
+                      borderRadius: '6px',
+                      fontSize: '0.9rem',
+                      fontWeight: '500',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Manage
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </main>
 
       {/* Footer */}

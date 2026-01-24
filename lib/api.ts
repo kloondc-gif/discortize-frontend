@@ -15,7 +15,8 @@ export const API_ENDPOINTS = {
 export async function apiRequest(
   endpoint: string,
   method: string = 'GET',
-  body?: any
+  body?: any,
+  includeAuth: boolean = false
 ) {
   const options: RequestInit = {
     method,
@@ -24,11 +25,46 @@ export async function apiRequest(
     },
   };
 
+  // Add authorization header if requested
+  if (includeAuth) {
+    const token = localStorage.getItem('token');
+    if (token) {
+      (options.headers as Record<string, string>)['Authorization'] = `Bearer ${token}`;
+    }
+  }
+
   if (body) {
     options.body = JSON.stringify(body);
   }
 
   const response = await fetch(endpoint, options);
+  
+  // Handle 401 Unauthorized - token expired
+  if (response.status === 401) {
+    console.log('Received 401 - attempting token refresh...');
+    const refreshed = await refreshAccessToken();
+    
+    if (refreshed) {
+      // Retry the request with new token
+      const newToken = localStorage.getItem('token');
+      if (newToken && includeAuth) {
+        (options.headers as Record<string, string>)['Authorization'] = `Bearer ${newToken}`;
+      }
+      
+      const retryResponse = await fetch(endpoint, options);
+      const retryData = await retryResponse.json();
+      
+      if (!retryResponse.ok) {
+        throw new Error(retryData.detail || 'An error occurred');
+      }
+      
+      return retryData;
+    } else {
+      // Refresh failed - user will be logged out by handleLogout()
+      throw new Error('Session expired. Please log in again.');
+    }
+  }
+
   const data = await response.json();
 
   if (!response.ok) {
@@ -48,6 +84,7 @@ export async function refreshAccessToken(): Promise<boolean> {
     
     if (!refreshToken) {
       console.log('No refresh token found');
+      handleLogout();
       return false;
     }
 
@@ -62,9 +99,7 @@ export async function refreshAccessToken(): Promise<boolean> {
     if (!response.ok) {
       console.log('Token refresh failed:', response.status);
       // Refresh token is invalid or expired
-      localStorage.removeItem('token');
-      localStorage.removeItem('refresh_token');
-      localStorage.removeItem('user');
+      handleLogout();
       return false;
     }
 
@@ -78,7 +113,27 @@ export async function refreshAccessToken(): Promise<boolean> {
     return true;
   } catch (error) {
     console.error('Token refresh failed:', error);
+    handleLogout();
     return false;
+  }
+}
+
+// Handle logout when tokens expire
+export function handleLogout() {
+  console.log('Tokens expired - logging out...');
+  localStorage.removeItem('token');
+  localStorage.removeItem('refresh_token');
+  localStorage.removeItem('user');
+  
+  // Stop token refresh
+  stopTokenRefresh();
+  
+  // Redirect to login if on a protected page
+  if (typeof window !== 'undefined') {
+    const pathname = window.location.pathname;
+    if (pathname.startsWith('/dashboard') || pathname.startsWith('/verify-email')) {
+      window.location.href = '/login';
+    }
   }
 }
 
@@ -99,11 +154,6 @@ export function startTokenRefresh() {
     if (!success) {
       // Token refresh failed, stop the interval
       stopTokenRefresh();
-      
-      // Redirect to login if on a protected page
-      if (typeof window !== 'undefined' && window.location.pathname === '/dashboard') {
-        window.location.href = '/login';
-      }
     }
   }, 600000); // 10 minutes (600,000 ms)
   
