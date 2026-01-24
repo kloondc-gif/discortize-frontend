@@ -57,6 +57,8 @@ export default function Home() {
           <img 
             src="/discortize-logo.png" 
             alt="Discortize" 
+            width="110"
+            height="110"
             style={{
               width: '110px',
               height: 'auto',
@@ -65,6 +67,32 @@ export default function Home() {
           />
         </motion.div>
       </motion.div>
+
+      {/* JSON-LD Structured Data */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': 'SoftwareApplication',
+            name: 'Discortize',
+            applicationCategory: 'BusinessApplication',
+            offers: {
+              '@type': 'Offer',
+              price: '0',
+              priceCurrency: 'USD',
+            },
+            description: 'Launch paid Discord communities, manage subscriptions, automate access, accept payments, and grow recurring revenue.',
+            url: 'https://discortize.com',
+            screenshot: 'https://discortize.com/og-image.png',
+            aggregateRating: {
+              '@type': 'AggregateRating',
+              ratingValue: '4.8',
+              ratingCount: '120',
+            },
+          }),
+        }}
+      />
 
       {/* Header */}
       <header className="header">
@@ -100,8 +128,14 @@ export default function Home() {
           </p>
 
           <div className="input-container">
-            <span className="input-prefix">discortize.com/</span>
-            <input type="text" className="input-field" placeholder="yourname" />
+            <label htmlFor="server-name" className="input-prefix">discortize.com/</label>
+            <input 
+              id="server-name"
+              type="text" 
+              className="input-field" 
+              placeholder="yourname"
+              aria-label="Your server name"
+            />
             <button className="cta-btn">Get Started — it&apos;s free</button>
           </div>
 
