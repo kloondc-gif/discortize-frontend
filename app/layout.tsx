@@ -15,6 +15,32 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Discortize - Monetize your Discord in seconds.",
   description: "Discortize makes it possible to launch your paid Discord community, to generate consistent income. Manage access, subscriptions, payments, affiliates — all done for you.",
+  icons: {
+    icon: '/favicon.png',
+    apple: '/favicon.png',
+  },
+  openGraph: {
+    title: "Discortize - Monetize your Discord in seconds.",
+    description: "Launch paid Discord communities, manage subscriptions, automate access, accept payments, and grow recurring revenue.",
+    url: 'https://discortize.com',
+    siteName: 'Discortize',
+    images: [
+      {
+        url: '/og-image.png',
+        width: 1200,
+        height: 630,
+        alt: 'Discortize Logo',
+      },
+    ],
+    locale: 'en_US',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: "Discortize - Monetize your Discord in seconds.",
+    description: "Launch paid Discord communities, manage subscriptions, automate access, accept payments, and grow recurring revenue.",
+    images: ['/og-image.png'],
+  },
 };
 
 export default function RootLayout({
