@@ -7,6 +7,7 @@ import { useRef, useState } from 'react';
 export default function Home() {
   const [subscribers, setSubscribers] = useState(480);
   const [price, setPrice] = useState('29.99');
+  const [showModal, setShowModal] = useState(true);
 
   const calculateEarnings = () => {
     const earnings = subscribers * parseFloat(price || '0');
@@ -15,6 +16,149 @@ export default function Home() {
 
   return (
     <>
+      {/* Development Modal */}
+      {showModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.8)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 10000,
+          padding: '20px'
+        }}>
+          <div style={{
+            backgroundColor: '#fff',
+            borderRadius: '16px',
+            padding: '48px 40px',
+            maxWidth: '520px',
+            width: '100%',
+            position: 'relative',
+            border: '3px solid #000',
+            boxShadow: '0 20px 60px rgba(0, 0, 0, 0.4)',
+            textAlign: 'center'
+          }}>
+            <button
+              onClick={() => setShowModal(false)}
+              style={{
+                position: 'absolute',
+                top: '16px',
+                right: '16px',
+                background: '#000',
+                border: 'none',
+                fontSize: '20px',
+                cursor: 'pointer',
+                color: '#fff',
+                fontWeight: 'bold',
+                padding: '8px 12px',
+                lineHeight: 1,
+                borderRadius: '6px',
+                transition: 'all 0.2s'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = '#333';
+                e.currentTarget.style.transform = 'scale(1.1)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = '#000';
+                e.currentTarget.style.transform = 'scale(1)';
+              }}
+            >
+              ×
+            </button>
+            <div style={{
+              fontSize: '48px',
+              marginBottom: '16px'
+            }}>
+              ⚠️
+            </div>
+            <h2 style={{
+              fontSize: '28px',
+              fontWeight: 'bold',
+              marginBottom: '16px',
+              color: '#000',
+              lineHeight: '1.2'
+            }}>
+              Website Under Development
+            </h2>
+            <p style={{
+              fontSize: '17px',
+              lineHeight: '1.6',
+              marginBottom: '32px',
+              color: '#555',
+              maxWidth: '400px',
+              margin: '0 auto 32px auto'
+            }}>
+              If you wanna ask any questions or get a free trial, join our Discord community!
+            </p>
+            <a
+              href="https://discord.gg/H2yNQfpU"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '10px',
+                backgroundColor: '#5865F2',
+                color: '#fff',
+                padding: '14px 32px',
+                borderRadius: '10px',
+                textDecoration: 'none',
+                fontWeight: 'bold',
+                fontSize: '17px',
+                transition: 'all 0.2s',
+                boxShadow: '0 4px 12px rgba(88, 101, 242, 0.4)'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = '#4752C4';
+                e.currentTarget.style.transform = 'translateY(-2px)';
+                e.currentTarget.style.boxShadow = '0 6px 16px rgba(88, 101, 242, 0.5)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = '#5865F2';
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '0 4px 12px rgba(88, 101, 242, 0.4)';
+              }}
+            >
+              <img src="/discord-svgrepo-com.svg" alt="Discord" style={{ width: '22px', height: '22px' }} />
+              Join Our Discord
+            </a>
+          </div>
+        </div>
+      )}
+
+      {/* Development Banner */}
+      <div style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        backgroundColor: '#000',
+        color: '#fff',
+        padding: '12px 20px',
+        textAlign: 'center',
+        zIndex: 9999,
+        fontSize: '14px',
+        borderBottom: '2px solid #fff'
+      }}>
+        <strong>⚠️ Website Under Development</strong> — For questions or a free trial, join our{' '}
+        <a 
+          href="https://discord.gg/H2yNQfpU" 
+          target="_blank" 
+          rel="noopener noreferrer"
+          style={{ color: '#5865F2', fontWeight: 'bold', textDecoration: 'underline' }}
+        >
+          Discord
+        </a>
+      </div>
+
+      {/* Add padding to body to account for fixed banner */}
+      <div style={{ paddingTop: '48px' }}>
+      
       {/* Pendulum */}
       <motion.div
         style={{
@@ -449,13 +593,17 @@ export default function Home() {
               <a href="#" className="footer-link">Terms</a>
             </div>
             <div className="footer-socials">
+              <a href="https://discord.gg/H2yNQfpU" target="_blank" rel="noopener noreferrer" className="social-link" title="Join our Discord">
+                <img src="/discord-svgrepo-com.svg" alt="Discord" style={{ width: '20px', height: '20px' }} />
+              </a>
+              <a href="https://discord.gg/H2yNQfpU" target="_blank" rel="noopener noreferrer" className="social-link" title="Join our Discord">💬</a>
               <a href="#" className="social-link">𝕏</a>
-              <a href="#" className="social-link">💬</a>
               <a href="#" className="social-link">▶</a>
             </div>
           </div>
         </div>
       </footer>
+      </div>
     </>
   );
 }

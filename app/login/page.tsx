@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { API_ENDPOINTS, apiRequest } from '@/lib/api';
+import { API_ENDPOINTS, apiRequest, verifyToken, clearAuthData } from '@/lib/api';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -13,14 +13,54 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    // Check if user is already logged in
-    const token = localStorage.getItem('token');
-    const user = localStorage.getItem('user');
+    // Check if user is already logged in with a valid token
+    const checkExistingSession = async () => {
+      const token = localStorage.getItem('token');
+      const refreshToken = localStorage.getItem('refresh_token');
+      const user = localStorage.getItem('user');
+      
+      if (token && user && refreshToken) {
+        console.log('Found existing session, verifying token...');
+        
+        // Verify token is still valid
+        const isValid = await verifyToken(token);
+        
+        if (isValid) {
+          // Token is valid, redirect to dashboard
+          console.log('Token valid, redirecting to dashboard');
+          router.push('/dashboard');
+        } else {
+          // Token expired, try to refresh
+          console.log('Token expired, attempting refresh...');
+          try {
+            const refreshResponse = await fetch('http://localhost:8000/api/auth/refresh', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ refresh_token: refreshToken }),
+            });
+            
+            if (refreshResponse.ok) {
+              const data = await refreshResponse.json();
+              localStorage.setItem('token', data.access_token);
+              localStorage.setItem('user', JSON.stringify(data.user));
+              console.log('Token refreshed successfully, redirecting to dashboard');
+              router.push('/dashboard');
+            } else {
+              // Refresh failed, clear expired tokens
+              console.log('Token refresh failed, clearing expired session');
+              clearAuthData();
+            }
+          } catch (error) {
+            console.error('Error refreshing token:', error);
+            clearAuthData();
+          }
+        }
+      }
+    };
     
-    if (token && user) {
-      console.log('User already logged in, redirecting to dashboard');
-      router.push('/dashboard');
-    }
+    checkExistingSession();
   }, [router]);
 
   const handleSubmit = async (e: React.FormEvent) => {

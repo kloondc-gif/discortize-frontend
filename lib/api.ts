@@ -166,3 +166,27 @@ export function stopTokenRefresh() {
     refreshInterval = null;
   }
 }
+
+// Check if token is valid by making a lightweight API call
+export async function verifyToken(token: string): Promise<boolean> {
+  try {
+    const response = await fetch(`${API_URL}/api/discord/check-connection`, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    
+    return response.ok;
+  } catch (error) {
+    console.error('Token verification error:', error);
+    return false;
+  }
+}
+
+// Clear all auth data from localStorage
+export function clearAuthData() {
+  localStorage.removeItem('token');
+  localStorage.removeItem('refresh_token');
+  localStorage.removeItem('user');
+  stopTokenRefresh();
+}

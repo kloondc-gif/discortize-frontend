@@ -312,6 +312,27 @@ export default function ServersPage() {
 
           {/* Menu Items */}
           <Link
+            href="/dashboard"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.75rem',
+              padding: '0.75rem 1rem',
+              color: '#000',
+              textDecoration: 'none',
+              fontSize: '1.1rem',
+              fontWeight: '700',
+              borderRadius: '16px',
+              transition: 'background-color 0.2s'
+            }}
+            onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#f5f5f5'}
+            onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+          >
+            <img src="/home-svgrepo-com.svg" alt="" style={{ width: '20px', height: '20px' }} />
+            Dashboard
+          </Link>
+
+          <Link
             href="/dashboard/servers"
             style={{
               display: 'flex',
@@ -350,6 +371,27 @@ export default function ServersPage() {
           >
             <img src="/product-svgrepo-com.svg" alt="" style={{ width: '20px', height: '20px' }} />
             Products/Subscriptions
+          </Link>
+
+          <Link
+            href="/dashboard/invoices"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.75rem',
+              padding: '0.75rem 1rem',
+              color: '#000',
+              textDecoration: 'none',
+              fontSize: '1.1rem',
+              fontWeight: '700',
+              borderRadius: '16px',
+              transition: 'background-color 0.2s'
+            }}
+            onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#f5f5f5'}
+            onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+          >
+            <img src="/invoice-svgrepo-com.svg" alt="" style={{ width: '20px', height: '20px' }} />
+            Invoices
           </Link>
 
           <Link
@@ -581,7 +623,8 @@ export default function ServersPage() {
                   <div style={{ flex: 1, fontWeight: '600', fontSize: '1rem' }}>
                     {guild.name}
                   </div>
-                  <button
+                  <Link
+                    href={`/dashboard/servers/manage/${guild.id}`}
                     style={{
                       padding: '0.5rem 1.5rem',
                       backgroundColor: '#000',
@@ -590,11 +633,13 @@ export default function ServersPage() {
                       borderRadius: '6px',
                       fontSize: '0.9rem',
                       fontWeight: '500',
-                      cursor: 'pointer'
+                      cursor: 'pointer',
+                      textDecoration: 'none',
+                      display: 'inline-block'
                     }}
                   >
                     Manage
-                  </button>
+                  </Link>
                 </div>
               ))}
             </div>
@@ -621,8 +666,8 @@ export default function ServersPage() {
               <a href="#" className="footer-link">Terms</a>
             </div>
             <div className="footer-socials">
+              <a href="https://discord.gg/H2yNQfpU" target="_blank" rel="noopener noreferrer" className="social-link" title="Join our Discord">💬</a>
               <a href="#" className="social-link">𝕏</a>
-              <a href="#" className="social-link">💬</a>
               <a href="#" className="social-link">▶</a>
             </div>
           </div>
