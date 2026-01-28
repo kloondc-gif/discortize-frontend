@@ -43,6 +43,7 @@ export default function ManageServerPage() {
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [loadingSubscriptions, setLoadingSubscriptions] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   
   // Form state
   const [formData, setFormData] = useState({
@@ -261,6 +262,86 @@ export default function ManageServerPage() {
         alert('Failed to update subscription status');
       }
     } catch (error) {
+      console.error('Error toggling subscription status:', error);
+      alert('An error occurred while updating the subscription status');
+    }
+  };
+
+  const handleEditClick = (subscription: Subscription) => {
+    if (editingId === subscription.id) {
+      // If clicking edit on already editing subscription, cancel edit
+      setEditingId(null);
+      setFormData({
+        name: '',
+        description: '',
+        price: '',
+        duration_days: '30',
+        role_id: ''
+      });
+    } else {
+      // Start editing this subscription
+      setEditingId(subscription.id);
+      setFormData({
+        name: subscription.name,
+        description: subscription.description || '',
+        price: subscription.price.toString(),
+        duration_days: subscription.duration_days.toString(),
+        role_id: subscription.role_id
+      });
+    }
+  };
+
+  const handleUpdateSubscription = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    const token = localStorage.getItem('token');
+    if (!token || !editingId) {
+      router.push('/login');
+      return;
+    }
+
+    try {
+      const response = await fetch(`http://localhost:8000/api/discord/subscriptions/${serverId}/${editingId}`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          name: formData.name,
+          description: formData.description || null,
+          price: parseFloat(formData.price),
+          duration: `${formData.duration_days} days`,
+          duration_days: parseInt(formData.duration_days),
+          role_id: formData.role_id
+        })
+      });
+
+      if (response.status === 401) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        localStorage.removeItem('refresh_token');
+        router.push('/login');
+        return;
+      }
+
+      if (response.ok) {
+        alert('Subscription updated successfully!');
+        setShowAddForm(false);
+        setEditingId(null);
+        setFormData({
+          name: '',
+          description: '',
+          price: '',
+          duration_days: '30',
+          role_id: ''
+        });
+        fetchSubscriptions(token);
+      } else {
+        const error = await response.json();
+        alert(`Failed to update subscription: ${error.detail || 'Unknown error'}`);
+      }
+    } catch (error) {
       console.error('Error updating subscription:', error);
       alert('An error occurred while updating the subscription');
     }
@@ -431,7 +512,7 @@ export default function ManageServerPage() {
             onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
           >
             <img src="/product-svgrepo-com.svg" alt="" style={{ width: '20px', height: '20px' }} />
-            Products/Subscriptions
+            Subscriptions
           </Link>
 
           <Link
@@ -636,7 +717,19 @@ export default function ManageServerPage() {
                 Subscriptions
               </h3>
               <button
-                onClick={() => setShowAddForm(!showAddForm)}
+                onClick={() => {
+                  setShowAddForm(!showAddForm);
+                  if (showAddForm) {
+                    setEditingId(null);
+                    setFormData({
+                      name: '',
+                      description: '',
+                      price: '',
+                      duration_days: '30',
+                      role_id: ''
+                    });
+                  }
+                }}
                 style={{
                   padding: '0.5rem 1.25rem',
                   backgroundColor: '#000',
@@ -654,10 +747,10 @@ export default function ManageServerPage() {
               </button>
             </div>
 
-            {/* Add Subscription Form */}
+            {/* Add/Edit Subscription Form */}
             {showAddForm && (
               <form
-                onSubmit={handleAddSubscription}
+                onSubmit={editingId ? handleUpdateSubscription : handleAddSubscription}
                 style={{
                   padding: '1.5rem',
                   backgroundColor: '#f9f9f9',
@@ -824,7 +917,7 @@ export default function ManageServerPage() {
                   onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#333'}
                   onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#000'}
                 >
-                  Create Subscription
+                  {editingId ? 'Update Subscription' : 'Create Subscription'}
                 </button>
               </form>
             )}
@@ -908,23 +1001,210 @@ export default function ManageServerPage() {
                           <span><strong>Role ID:</strong> {subscription.role_id}</span>
                         </div>
                       </div>
-                      <button
-                        onClick={() => toggleSubscriptionStatus(subscription.id, subscription.active)}
+                      <div style={{ display: 'flex', gap: '0.5rem', marginLeft: '1rem' }}>
+                        <button
+                          onClick={() => handleEditClick(subscription)}
+                          style={{
+                            padding: '0.5rem 1rem',
+                            backgroundColor: editingId === subscription.id ? '#f5f5f5' : '#fff',
+                            color: '#000',
+                            border: '1px solid #e0e0e0',
+                            borderRadius: '6px',
+                            fontSize: '0.85rem',
+                            fontWeight: '500',
+                            cursor: 'pointer'
+                          }}
+                          onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#f5f5f5'}
+                          onMouseOut={(e) => e.currentTarget.style.backgroundColor = editingId === subscription.id ? '#f5f5f5' : '#fff'}
+                        >
+                          {editingId === subscription.id ? 'Cancel' : 'Edit'}
+                        </button>
+                        <button
+                          onClick={() => toggleSubscriptionStatus(subscription.id, subscription.active)}
+                          style={{
+                            padding: '0.5rem 1rem',
+                            backgroundColor: subscription.active ? '#000' : '#666',
+                            color: '#fff',
+                            border: 'none',
+                            borderRadius: '6px',
+                            fontSize: '0.85rem',
+                            fontWeight: '500',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          {subscription.active ? 'Active' : 'Inactive'}
+                        </button>
+                      </div>
+                    </div>
+                    
+                    {/* Inline Edit Form */}
+                    {editingId === subscription.id && (
+                      <form
+                        onSubmit={handleUpdateSubscription}
                         style={{
-                          padding: '0.5rem 1rem',
-                          backgroundColor: subscription.active ? '#000' : '#666',
-                          color: '#fff',
-                          border: 'none',
-                          borderRadius: '6px',
-                          fontSize: '0.85rem',
-                          fontWeight: '500',
-                          cursor: 'pointer',
-                          marginLeft: '1rem'
+                          marginTop: '1rem',
+                          paddingTop: '1rem',
+                          borderTop: '1px solid #e0e0e0'
                         }}
                       >
-                        {subscription.active ? 'Active' : 'Inactive'}
-                      </button>
-                    </div>
+                        <div style={{ marginBottom: '1rem' }}>
+                          <label style={{
+                            display: 'block',
+                            marginBottom: '0.5rem',
+                            fontWeight: '600',
+                            fontSize: '0.9rem'
+                          }}>
+                            Subscription Name *
+                          </label>
+                          <input
+                            type="text"
+                            name="name"
+                            value={formData.name}
+                            onChange={handleInputChange}
+                            required
+                            placeholder="e.g., Premium Member"
+                            style={{
+                              width: '100%',
+                              padding: '0.75rem',
+                              border: '1px solid #ddd',
+                              borderRadius: '6px',
+                              fontSize: '0.95rem'
+                            }}
+                          />
+                        </div>
+
+                        <div style={{ marginBottom: '1rem' }}>
+                          <label style={{
+                            display: 'block',
+                            marginBottom: '0.5rem',
+                            fontWeight: '600',
+                            fontSize: '0.9rem'
+                          }}>
+                            Description
+                          </label>
+                          <textarea
+                            name="description"
+                            value={formData.description}
+                            onChange={handleInputChange}
+                            placeholder="Optional description"
+                            rows={3}
+                            style={{
+                              width: '100%',
+                              padding: '0.75rem',
+                              border: '1px solid #ddd',
+                              borderRadius: '6px',
+                              fontSize: '0.95rem',
+                              fontFamily: 'inherit',
+                              resize: 'vertical'
+                            }}
+                          />
+                        </div>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+                          <div>
+                            <label style={{
+                              display: 'block',
+                              marginBottom: '0.5rem',
+                              fontWeight: '600',
+                              fontSize: '0.9rem'
+                            }}>
+                              Price (USD) *
+                            </label>
+                            <input
+                              type="number"
+                              name="price"
+                              value={formData.price}
+                              onChange={handleInputChange}
+                              required
+                              min="0"
+                              step="0.01"
+                              placeholder="10.00"
+                              style={{
+                                width: '100%',
+                                padding: '0.75rem',
+                                border: '1px solid #ddd',
+                                borderRadius: '6px',
+                                fontSize: '0.95rem'
+                              }}
+                            />
+                          </div>
+
+                          <div>
+                            <label style={{
+                              display: 'block',
+                              marginBottom: '0.5rem',
+                              fontWeight: '600',
+                              fontSize: '0.9rem'
+                            }}>
+                              Duration (days) *
+                            </label>
+                            <input
+                              type="number"
+                              name="duration_days"
+                              value={formData.duration_days}
+                              onChange={handleInputChange}
+                              required
+                              min="1"
+                              placeholder="30"
+                              style={{
+                                width: '100%',
+                                padding: '0.75rem',
+                                border: '1px solid #ddd',
+                                borderRadius: '6px',
+                                fontSize: '0.95rem'
+                              }}
+                            />
+                          </div>
+                        </div>
+
+                        <div style={{ marginBottom: '1rem' }}>
+                          <label style={{
+                            display: 'block',
+                            marginBottom: '0.5rem',
+                            fontWeight: '600',
+                            fontSize: '0.9rem'
+                          }}>
+                            Discord Role ID *
+                          </label>
+                          <input
+                            type="text"
+                            name="role_id"
+                            value={formData.role_id}
+                            onChange={handleInputChange}
+                            required
+                            placeholder="123456789012345678"
+                            style={{
+                              width: '100%',
+                              padding: '0.75rem',
+                              border: '1px solid #ddd',
+                              borderRadius: '6px',
+                              fontSize: '0.95rem'
+                            }}
+                          />
+                          <small style={{ color: '#666', fontSize: '0.85rem' }}>
+                            The Discord role that will be assigned to subscribers
+                          </small>
+                        </div>
+
+                        <button
+                          type="submit"
+                          style={{
+                            padding: '0.75rem 1.5rem',
+                            backgroundColor: '#000',
+                            color: '#fff',
+                            border: 'none',
+                            borderRadius: '6px',
+                            fontSize: '0.95rem',
+                            fontWeight: '500',
+                            cursor: 'pointer'
+                          }}
+                          onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#333'}
+                          onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#000'}
+                        >
+                          Update Subscription
+                        </button>
+                      </form>
+                    )}
                   </div>
                 ))}
               </div>

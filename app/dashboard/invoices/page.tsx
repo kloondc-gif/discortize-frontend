@@ -511,7 +511,7 @@ export default function InvoicesPage() {
           onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
         >
           <img src="/product-svgrepo-com.svg" alt="" style={{ width: '20px', height: '20px' }} />
-          Products/Subscriptions
+          Subscriptions
         </Link>
 
         <Link
@@ -750,9 +750,11 @@ export default function InvoicesPage() {
                   return (
                     <tr 
                       key={invoice.invoice_id}
+                      onClick={() => router.push(`/dashboard/invoices/${invoice.invoice_id}`)}
                       style={{
                         borderBottom: '1px solid #f0f0f0',
-                        transition: 'background-color 0.2s'
+                        transition: 'background-color 0.2s',
+                        cursor: 'pointer'
                       }}
                       onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#f9f9f9'}
                       onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}

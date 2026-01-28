@@ -29,6 +29,12 @@ interface DashboardStats {
   balance: number;
 }
 
+interface RevenueChartData {
+  date: string;
+  revenue: number;
+  orders: number;
+}
+
 function DashboardContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -41,6 +47,9 @@ function DashboardContent() {
   const [loadingGuilds, setLoadingGuilds] = useState(false);
   const [discordClientId, setDiscordClientId] = useState<string>('');
   const [checkingConnection, setCheckingConnection] = useState(true);
+  const [revenueChartData, setRevenueChartData] = useState<RevenueChartData[]>([]);
+  const [hoveredDataIndex, setHoveredDataIndex] = useState<number | null>(null);
+  const [loadingChart, setLoadingChart] = useState(false);
   
   // Withdrawal modal states
   const [showWithdrawModal, setShowWithdrawModal] = useState(false);
@@ -73,8 +82,28 @@ function DashboardContent() {
           balance: balanceData.total_balance_usd || 0
         }));
       }
+
+      // Fetch revenue stats for chart
+      setLoadingChart(true);
+      const revenueResponse = await fetch('http://localhost:8000/api/stats/revenue?days=30', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (revenueResponse.ok) {
+        const revenueData = await revenueResponse.json();
+        setRevenueChartData(revenueData.chart_data || []);
+        setStats(prev => ({
+          ...prev,
+          revenue: revenueData.total_revenue || 0,
+          orders: revenueData.total_orders || 0
+        }));
+      }
     } catch (error) {
       console.error('Error fetching dashboard stats:', error);
+    } finally {
+      setLoadingChart(false);
     }
   };
 
@@ -591,7 +620,7 @@ function DashboardContent() {
             onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
           >
             <img src="/product-svgrepo-com.svg" alt="" style={{ width: '20px', height: '20px' }} />
-            Products/Subscriptions
+            Subscriptions
           </Link>
 
           <Link
@@ -889,20 +918,247 @@ function DashboardContent() {
                 marginBottom: '2rem'
               }}>
                 <h3 style={{ fontSize: '1.125rem', fontWeight: '700', marginBottom: '1.5rem', color: '#000' }}>
-                  Revenue & Orders
+                  Revenue & Orders (Last 30 Days)
                 </h3>
-                <div style={{
-                  height: '300px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  backgroundColor: '#f9f9f9',
-                  borderRadius: '8px',
-                  color: '#666',
-                  fontSize: '0.9rem'
-                }}>
-                  Chart placeholder - Connect data to display trends
-                </div>
+                {loadingChart ? (
+                  <div style={{
+                    height: '300px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    backgroundColor: '#f9f9f9',
+                    borderRadius: '8px'
+                  }}>
+                    <div style={{
+                      border: '3px solid #000',
+                      borderTop: '3px solid transparent',
+                      borderRadius: '50%',
+                      width: '40px',
+                      height: '40px',
+                      animation: 'spin 1s linear infinite'
+                    }} />
+                  </div>
+                ) : revenueChartData.length === 0 ? (
+                  <div style={{
+                    height: '300px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    backgroundColor: '#f9f9f9',
+                    borderRadius: '8px',
+                    color: '#666',
+                    fontSize: '0.9rem'
+                  }}>
+                    No revenue data yet
+                  </div>
+                ) : (
+                  <div style={{ position: 'relative', height: '320px', padding: '0 0 0 40px' }}>
+                    {/* SVG Area Chart */}
+                    <svg
+                      width="100%"
+                      height="280"
+                      style={{ overflow: 'visible' }}
+                      viewBox="0 0 800 280"
+                      preserveAspectRatio="none"
+                      onMouseMove={(e) => {
+                        const rect = e.currentTarget.getBoundingClientRect();
+                        const x = ((e.clientX - rect.left) / rect.width) * 800;
+                        const index = Math.round((x / 800) * (revenueChartData.length - 1));
+                        if (index >= 0 && index < revenueChartData.length) {
+                          setHoveredDataIndex(index);
+                        }
+                      }}
+                      onMouseLeave={() => setHoveredDataIndex(null)}
+                    >
+                      <defs>
+                        <linearGradient id="areaGradient" x1="0" x2="0" y1="0" y2="1">
+                          <stop offset="0%" stopColor="rgba(96, 165, 250, 0.4)" />
+                          <stop offset="100%" stopColor="rgba(96, 165, 250, 0.05)" />
+                        </linearGradient>
+                      </defs>
+                      
+                      {(() => {
+                        const maxRevenue = Math.max(...revenueChartData.map(d => d.revenue), 1);
+                        const width = 800;
+                        const height = 260;
+                        const paddingTop = 30;
+                        const paddingBottom = 20;
+                        const chartHeight = height - paddingTop - paddingBottom;
+                        
+                        // Calculate points for the line
+                        const points = revenueChartData.map((data, index) => {
+                          const x = (index / (revenueChartData.length - 1)) * width;
+                          const y = paddingTop + chartHeight - (data.revenue / maxRevenue) * chartHeight;
+                          return { x, y, data };
+                        });
+                        
+                        // Create smooth curve path using quadratic bezier curves
+                        let pathD = `M ${points[0].x} ${points[0].y}`;
+                        for (let i = 0; i < points.length - 1; i++) {
+                          const current = points[i];
+                          const next = points[i + 1];
+                          const midX = (current.x + next.x) / 2;
+                          pathD += ` Q ${current.x} ${current.y}, ${midX} ${(current.y + next.y) / 2}`;
+                          if (i === points.length - 2) {
+                            pathD += ` Q ${next.x} ${next.y}, ${next.x} ${next.y}`;
+                          }
+                        }
+                        
+                        // Create area path (line + close to bottom)
+                        const areaPath = `${pathD} L ${width} ${height - paddingBottom} L 0 ${height - paddingBottom} Z`;
+                        
+                        // Get hovered point data
+                        const hoveredPoint = hoveredDataIndex !== null ? points[hoveredDataIndex] : null;
+                        
+                        return (
+                          <>
+                            {/* Grid lines */}
+                            {[0, 0.25, 0.5, 0.75, 1].map((ratio, i) => (
+                              <line
+                                key={i}
+                                x1="0"
+                                y1={paddingTop + chartHeight * (1 - ratio)}
+                                x2={width}
+                                y2={paddingTop + chartHeight * (1 - ratio)}
+                                stroke="#f3f4f6"
+                                strokeWidth="1"
+                                strokeDasharray="4 4"
+                              />
+                            ))}
+                            
+                            {/* Y-axis labels inside chart */}
+                            {[1, 0.75, 0.5, 0.25, 0].map((ratio, i) => (
+                              <text
+                                key={i}
+                                x="10"
+                                y={paddingTop + chartHeight * (1 - ratio) + 4}
+                                fontSize="11"
+                                fill="#999"
+                                fontFamily="system-ui, -apple-system, sans-serif"
+                              >
+                                ${(maxRevenue * ratio).toFixed(2)}
+                              </text>
+                            ))}
+                            
+                            {/* Hover vertical line */}
+                            {hoveredPoint && (
+                              <>
+                                <line
+                                  x1={hoveredPoint.x}
+                                  y1={paddingTop}
+                                  x2={hoveredPoint.x}
+                                  y2={height - paddingBottom}
+                                  stroke="#94a3b8"
+                                  strokeWidth="1"
+                                  strokeDasharray="4 4"
+                                />
+                                <circle
+                                  cx={hoveredPoint.x}
+                                  cy={hoveredPoint.y}
+                                  r="6"
+                                  fill="#60a5fa"
+                                  stroke="#fff"
+                                  strokeWidth="3"
+                                />
+                              </>
+                            )}
+                            
+                            {/* Area fill */}
+                            <path
+                              d={areaPath}
+                              fill="url(#areaGradient)"
+                            />
+                            
+                            {/* Line */}
+                            <path
+                              d={pathD}
+                              fill="none"
+                              stroke="#60a5fa"
+                              strokeWidth="2.5"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            />
+                            
+                            {/* Invisible hover areas for better interaction */}
+                            {points.map((point, index) => (
+                              <rect
+                                key={index}
+                                x={point.x - 15}
+                                y={0}
+                                width="30"
+                                height={height}
+                                fill="transparent"
+                                style={{ cursor: 'pointer' }}
+                              />
+                            ))}
+                          </>
+                        );
+                      })()}
+                    </svg>
+                    
+                    {/* Professional hover tooltip */}
+                    {hoveredDataIndex !== null && revenueChartData[hoveredDataIndex] && (
+                      <div style={{
+                        position: 'absolute',
+                        bottom: '30px',
+                        left: `${(hoveredDataIndex / (revenueChartData.length - 1)) * 100}%`,
+                        transform: 'translateX(-50%)',
+                        backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                        backdropFilter: 'blur(10px)',
+                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                        borderRadius: '8px',
+                        padding: '12px 16px',
+                        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+                        minWidth: '180px',
+                        zIndex: 10,
+                        transition: 'left 0.1s ease-out',
+                        pointerEvents: 'none'
+                      }}>
+                        <div style={{ fontSize: '0.75rem', color: '#6b7280', marginBottom: '8px' }}>
+                          {new Date(revenueChartData[hoveredDataIndex].date).toLocaleDateString('en-US', { 
+                            month: 'short', 
+                            day: 'numeric',
+                            year: 'numeric'
+                          })}
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span style={{ fontSize: '0.875rem', color: '#374151', fontWeight: '500' }}>Revenue</span>
+                            <span style={{ fontSize: '1rem', color: '#60a5fa', fontWeight: '600' }}>
+                              ${revenueChartData[hoveredDataIndex].revenue.toFixed(2)}
+                            </span>
+                          </div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span style={{ fontSize: '0.875rem', color: '#374151', fontWeight: '500' }}>Orders</span>
+                            <span style={{ fontSize: '1rem', color: '#10b981', fontWeight: '600' }}>
+                              {revenueChartData[hoveredDataIndex].orders}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* X-axis labels */}
+                    <div style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      marginTop: '10px',
+                      fontSize: '0.75rem',
+                      color: '#999',
+                      paddingLeft: '10px',
+                      paddingRight: '10px'
+                    }}>
+                      {[0, Math.floor(revenueChartData.length / 3), Math.floor(revenueChartData.length * 2 / 3), revenueChartData.length - 1].map((index) => {
+                        const date = new Date(revenueChartData[index].date);
+                        return (
+                          <div key={index}>
+                            {date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Latest Completed Orders */}

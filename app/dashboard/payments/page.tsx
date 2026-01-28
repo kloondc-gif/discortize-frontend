@@ -491,7 +491,7 @@ export default function PaymentsPage() {
             onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
           >
             <img src="/product-svgrepo-com.svg" alt="" style={{ width: '20px', height: '20px' }} />
-            Products/Subscriptions
+            Subscriptions
           </Link>
 
           <Link
