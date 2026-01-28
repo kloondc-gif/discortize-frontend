@@ -182,6 +182,51 @@ export default function InvoicePage() {
 
         {!isPaid && (
           <>
+            {/* Payment Received - Waiting for Confirmations */}
+            {invoice.status === 'pending' && invoice.transaction_id && (
+              <div style={{
+                padding: '1.5rem',
+                backgroundColor: '#fff3e0',
+                borderRadius: '12px',
+                textAlign: 'center',
+                marginBottom: '2rem',
+                border: '2px solid #ff9800'
+              }}>
+                <p style={{ 
+                  margin: '0 0 0.5rem 0',
+                  fontSize: '2rem'
+                }}>
+                  ⏳
+                </p>
+                <p style={{ 
+                  margin: 0,
+                  fontSize: '1.2rem',
+                  fontWeight: '600',
+                  color: '#e65100'
+                }}>
+                  Payment Received - Waiting for Confirmations
+                </p>
+                <p style={{ 
+                  margin: '0.75rem 0 0 0',
+                  fontSize: '0.95rem',
+                  color: '#666'
+                }}>
+                  Your payment has been detected on the blockchain. Waiting for network confirmations...
+                </p>
+                {invoice.transaction_id && (
+                  <p style={{ 
+                    margin: '1rem 0 0 0',
+                    fontSize: '0.85rem',
+                    color: '#666',
+                    wordBreak: 'break-all',
+                    fontFamily: 'monospace'
+                  }}>
+                    TX: {invoice.transaction_id}
+                  </p>
+                )}
+              </div>
+            )}
+
             {/* QR Code */}
             {invoice.qr_code && (
               <div style={{ 
