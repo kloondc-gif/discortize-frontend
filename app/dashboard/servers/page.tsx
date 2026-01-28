@@ -493,18 +493,62 @@ export default function ServersPage() {
           paddingLeft: '5rem',
           maxWidth: '900px'
         }}>
-          <h2 style={{ 
-            fontSize: '1.575rem', 
-            fontWeight: '700', 
-            marginBottom: '1.5rem',
+          <div style={{
             display: 'flex',
+            justifyContent: 'space-between',
             alignItems: 'center',
-            gap: '0.75rem',
-            color: '#000'
+            marginBottom: '1.5rem'
           }}>
-            <img src="/servers-svgrepo-com.svg" alt="" style={{ width: '29px', height: '29px' }} />
-            Servers
-          </h2>
+            <h2 style={{ 
+              fontSize: '1.575rem', 
+              fontWeight: '700', 
+              margin: 0,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.75rem',
+              color: '#000'
+            }}>
+              <img src="/servers-svgrepo-com.svg" alt="" style={{ width: '29px', height: '29px' }} />
+              Servers
+            </h2>
+            
+            {discordClientId && (
+              <a
+                href={`https://discord.com/api/oauth2/authorize?client_id=${discordClientId}&permissions=8&scope=bot%20applications.commands`}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  padding: '0.65rem 1.25rem',
+                  backgroundColor: '#5865F2',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '8px',
+                  fontSize: '0.9rem',
+                  fontWeight: '600',
+                  textDecoration: 'none',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s'
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.backgroundColor = '#4752C4';
+                  e.currentTarget.style.transform = 'translateY(-1px)';
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.backgroundColor = '#5865F2';
+                  e.currentTarget.style.transform = 'translateY(0)';
+                }}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="12" y1="5" x2="12" y2="19"></line>
+                  <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+                Add Bot
+              </a>
+            )}
+          </div>
           
           {checkingConnection ? (
             <div style={{ textAlign: 'center', padding: '2rem' }}>
