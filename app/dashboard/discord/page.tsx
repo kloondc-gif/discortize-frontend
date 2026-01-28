@@ -3,6 +3,7 @@
 import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import { API_URL } from '@/lib/api';
 
 interface DiscordUser {
   id: string;
@@ -58,7 +59,7 @@ function DiscordConnectionContent() {
 
   const fetchClientId = async () => {
     try {
-      const response = await fetch('http://localhost:8000/api/discord/client-id');
+      const response = await fetch(`${API_URL}/api/discord/client-id`);
       if (response.ok) {
         const data = await response.json();
         setDiscordClientId(data.client_id);
@@ -76,7 +77,7 @@ function DiscordConnectionContent() {
         return;
       }
 
-      const response = await fetch('http://localhost:8000/api/discord/connection', {
+      const response = await fetch(`${API_URL}/api/discord/connection`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -109,7 +110,7 @@ function DiscordConnectionContent() {
   const handleCallback = async (code: string) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:8000/api/discord/callback', {
+      const response = await fetch(`${API_URL}/api/discord/callback`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -143,7 +144,7 @@ function DiscordConnectionContent() {
         return;
       }
 
-      const response = await fetch('http://localhost:8000/api/discord/auth', {
+      const response = await fetch(`${API_URL}/api/discord/auth`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -177,7 +178,7 @@ function DiscordConnectionContent() {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:8000/api/discord/disconnect', {
+      const response = await fetch(`${API_URL}/api/discord/disconnect`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -197,7 +198,7 @@ function DiscordConnectionContent() {
   const fetchGuilds = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:8000/api/discord/guilds', {
+      const response = await fetch(`${API_URL}/api/discord/guilds`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -222,7 +223,7 @@ function DiscordConnectionContent() {
     try {
       const token = localStorage.getItem('token');
       const response = await fetch(
-        `http://localhost:8000/api/discord/guild/${guildId}/settings`,
+        `${API_URL}/api/discord/guild/${guildId}/settings`,
         {
           headers: {
             'Authorization': `Bearer ${token}`
@@ -246,7 +247,7 @@ function DiscordConnectionContent() {
     try {
       const token = localStorage.getItem('token');
       const response = await fetch(
-        `http://localhost:8000/api/discord/guild/${guildId}/settings`,
+        `${API_URL}/api/discord/guild/${guildId}/settings`,
         {
           method: 'POST',
           headers: {

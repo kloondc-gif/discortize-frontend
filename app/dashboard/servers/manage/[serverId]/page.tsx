@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
-import { startTokenRefresh, stopTokenRefresh } from '@/lib/api';
+import { startTokenRefresh, stopTokenRefresh, API_URL } from '@/lib/api';
 
 interface User {
   id: string;
@@ -85,7 +85,7 @@ export default function ManageServerPage() {
 
   const fetchGuildDetails = async (token: string) => {
     try {
-      const response = await fetch(`http://localhost:8000/api/discord/guilds/${serverId}`, {
+      const response = await fetch(`${API_URL}/api/discord/guilds/${serverId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -113,7 +113,7 @@ export default function ManageServerPage() {
 
   const registerServer = async (token: string, guildData: any) => {
     try {
-      const response = await fetch(`http://localhost:8000/api/discord/servers/${serverId}/register`, {
+      const response = await fetch(`${API_URL}/api/discord/servers/${serverId}/register`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -139,7 +139,7 @@ export default function ManageServerPage() {
   const fetchSubscriptions = async (token: string) => {
     setLoadingSubscriptions(true);
     try {
-      const response = await fetch(`http://localhost:8000/api/discord/subscriptions/${serverId}`, {
+      const response = await fetch(`${API_URL}/api/discord/subscriptions/${serverId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -182,7 +182,7 @@ export default function ManageServerPage() {
     }
 
     try {
-      const response = await fetch(`http://localhost:8000/api/discord/subscriptions/${serverId}`, {
+      const response = await fetch(`${API_URL}/api/discord/subscriptions/${serverId}`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -237,7 +237,7 @@ export default function ManageServerPage() {
     }
 
     try {
-      const response = await fetch(`http://localhost:8000/api/discord/subscriptions/${serverId}/${subscriptionId}`, {
+      const response = await fetch(`${API_URL}/api/discord/subscriptions/${serverId}/${subscriptionId}`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -301,7 +301,7 @@ export default function ManageServerPage() {
     }
 
     try {
-      const response = await fetch(`http://localhost:8000/api/discord/subscriptions/${serverId}/${editingId}`, {
+      const response = await fetch(`${API_URL}/api/discord/subscriptions/${serverId}/${editingId}`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${token}`,

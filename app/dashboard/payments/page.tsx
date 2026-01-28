@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { startTokenRefresh, stopTokenRefresh } from '@/lib/api';
+import { startTokenRefresh, stopTokenRefresh, API_URL } from '@/lib/api';
 
 interface User {
   id: string;
@@ -88,7 +88,7 @@ export default function PaymentsPage() {
 
   const fetchCryptoConfigs = async (token: string) => {
     try {
-      const response = await fetch('http://localhost:8000/api/crypto/config', {
+      const response = await fetch(`${API_URL}/api/crypto/config`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -128,7 +128,7 @@ export default function PaymentsPage() {
     setErrors(prev => ({ ...prev, [coinId]: '' }));
 
     try {
-      const response = await fetch(`http://localhost:8000/api/crypto/config/request-otp?coin=${coinId}`, {
+      const response = await fetch(`${API_URL}/api/crypto/config/request-otp?coin=${coinId}`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -189,7 +189,7 @@ export default function PaymentsPage() {
 
     try {
       const response = await fetch(
-        `http://localhost:8000/api/crypto/config/save?coin=${coinId}&address=${encodeURIComponent(data.address)}&otp_code=${data.otp}`,
+        `${API_URL}/api/crypto/config/save?coin=${coinId}&address=${encodeURIComponent(data.address)}&otp_code=${data.otp}`,
         {
           method: 'POST',
           headers: {
@@ -235,7 +235,7 @@ export default function PaymentsPage() {
 
   const fetchClientId = async () => {
     try {
-      const response = await fetch('http://localhost:8000/api/discord/client-id');
+      const response = await fetch(`${API_URL}/api/discord/client-id`);
       if (response.ok) {
         const data = await response.json();
         setDiscordClientId(data.client_id);
@@ -248,7 +248,7 @@ export default function PaymentsPage() {
   const checkDiscordConnection = async (token: string) => {
     setCheckingConnection(true);
     try {
-      const response = await fetch('http://localhost:8000/api/discord/connection', {
+      const response = await fetch(`${API_URL}/api/discord/connection`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }

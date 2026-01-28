@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Image from 'next/image';
+import { API_URL } from '@/lib/api';
 
 interface Invoice {
   invoice_id: string;
@@ -46,7 +47,7 @@ export default function InvoicePage() {
 
   const fetchInvoice = async () => {
     try {
-      const response = await fetch(`http://localhost:8000/api/crypto/invoice/${invoiceId}`);
+      const response = await fetch(`${API_URL}/api/crypto/invoice/${invoiceId}`);
       
       if (response.ok) {
         const data = await response.json();

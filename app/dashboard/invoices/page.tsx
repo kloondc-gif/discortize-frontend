@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { startTokenRefresh, stopTokenRefresh } from '@/lib/api';
+import { startTokenRefresh, stopTokenRefresh, API_URL } from '@/lib/api';
 
 interface User {
   id: string;
@@ -81,7 +81,7 @@ export default function InvoicesPage() {
 
   const fetchClientId = async () => {
     try {
-      const response = await fetch('http://localhost:8000/api/env/discord-client-id');
+      const response = await fetch(`${API_URL}/api/env/discord-client-id`);
       if (response.ok) {
         const data = await response.json();
         setDiscordClientId(data.client_id);
@@ -93,7 +93,7 @@ export default function InvoicesPage() {
 
   const checkDiscordConnection = async (token: string) => {
     try {
-      const response = await fetch('http://localhost:8000/api/discord/check-connection', {
+      const response = await fetch(`${API_URL}/api/discord/check-connection`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -115,7 +115,7 @@ export default function InvoicesPage() {
   const connectDiscord = () => {
     if (!discordClientId) return;
 
-    const redirectUri = encodeURIComponent('http://localhost:8000/api/discord/callback');
+    const redirectUri = encodeURIComponent(`${API_URL}/api/discord/callback`);
     const scope = encodeURIComponent('identify');
     const state = localStorage.getItem('token') || '';
 
@@ -127,7 +127,7 @@ export default function InvoicesPage() {
   const fetchInvoices = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:8000/api/crypto/invoices', {
+      const response = await fetch(`${API_URL}/api/crypto/invoices`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -156,7 +156,7 @@ export default function InvoicesPage() {
   const fetchCryptoConfigs = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:8000/api/crypto/config', {
+      const response = await fetch(`${API_URL}/api/crypto/config`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -201,7 +201,7 @@ export default function InvoicesPage() {
         return;
       }
 
-      const response = await fetch('http://localhost:8000/api/crypto/invoice/create', {
+      const response = await fetch(`${API_URL}/api/crypto/invoice/create`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -274,7 +274,7 @@ export default function InvoicesPage() {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:8000/api/crypto/invoice/${revokeInvoiceId}/revoke`, {
+      const response = await fetch(`${API_URL}/api/crypto/invoice/${revokeInvoiceId}/revoke`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`

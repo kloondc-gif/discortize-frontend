@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { API_ENDPOINTS, apiRequest, verifyToken, clearAuthData } from '@/lib/api';
+import { API_ENDPOINTS, apiRequest, verifyToken, clearAuthData, API_URL } from '@/lib/api';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -33,7 +33,7 @@ export default function LoginPage() {
           // Token expired, try to refresh
           console.log('Token expired, attempting refresh...');
           try {
-            const refreshResponse = await fetch('http://localhost:8000/api/auth/refresh', {
+            const refreshResponse = await fetch(`${API_URL}/api/auth/refresh`, {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',

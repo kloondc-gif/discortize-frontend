@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { startTokenRefresh, stopTokenRefresh } from '@/lib/api';
+import { startTokenRefresh, stopTokenRefresh, API_URL } from '@/lib/api';
 
 interface User {
   id: string;
@@ -77,7 +77,7 @@ export default function SubscriptionsPage() {
 
   const fetchClientId = async () => {
     try {
-      const response = await fetch('http://localhost:8000/api/env/discord-client-id');
+      const response = await fetch(`${API_URL}/api/env/discord-client-id`);
       if (response.ok) {
         const data = await response.json();
         setDiscordClientId(data.client_id);
@@ -89,7 +89,7 @@ export default function SubscriptionsPage() {
 
   const checkDiscordConnection = async (token: string) => {
     try {
-      const response = await fetch('http://localhost:8000/api/discord/check-connection', {
+      const response = await fetch(`${API_URL}/api/discord/check-connection`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -111,7 +111,7 @@ export default function SubscriptionsPage() {
   const connectDiscord = () => {
     if (!discordClientId) return;
 
-    const redirectUri = encodeURIComponent('http://localhost:8000/api/discord/callback');
+    const redirectUri = encodeURIComponent(`${API_URL}/api/discord/callback`);
     const scope = encodeURIComponent('identify');
     const state = localStorage.getItem('token') || '';
 
@@ -123,7 +123,7 @@ export default function SubscriptionsPage() {
 
   const fetchSubscribers = async (token: string) => {
     try {
-      const response = await fetch('http://localhost:8000/api/discord/subscribers', {
+      const response = await fetch(`${API_URL}/api/discord/subscribers`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -177,7 +177,7 @@ export default function SubscriptionsPage() {
     if (!token) return;
 
     try {
-      const response = await fetch(`http://localhost:8000/api/discord/subscribers/${paymentId}/revoke`, {
+      const response = await fetch(`${API_URL}/api/discord/subscribers/${paymentId}/revoke`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -213,7 +213,7 @@ export default function SubscriptionsPage() {
     if (!token) return;
 
     try {
-      const response = await fetch(`http://localhost:8000/api/discord/subscribers/${paymentId}/extend?days=${days}`, {
+      const response = await fetch(`${API_URL}/api/discord/subscribers/${paymentId}/extend?days=${days}`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`

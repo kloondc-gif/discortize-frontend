@@ -3,6 +3,7 @@
  */
 
 import { cache, CacheKeys, CacheDurations } from './cache';
+import { API_URL } from './api';
 
 // Track in-flight requests to prevent duplicate calls
 const inflightRequests = new Map<string, Promise<any>>();
@@ -38,7 +39,7 @@ export async function getDiscordClientId(): Promise<string> {
     return cached;
   }
 
-  const response = await fetchWithDedup('http://localhost:8000/api/env/discord-client-id');
+  const response = await fetchWithDedup(`${API_URL}/api/env/discord-client-id`);
   if (response.ok) {
     const data = await response.json();
     // Cache for 1 hour (this rarely changes)
@@ -59,7 +60,7 @@ export async function checkDiscordConnection(token: string): Promise<{ connected
     return cached;
   }
 
-  const response = await fetchWithDedup('http://localhost:8000/api/discord/check-connection', {
+  const response = await fetchWithDedup(`${API_URL}/api/discord/check-connection`, {
     headers: {
       'Authorization': `Bearer ${token}`
     }
@@ -84,7 +85,7 @@ export async function getCryptoConfigs(token: string) {
     return cached;
   }
 
-  const response = await fetchWithDedup('http://localhost:8000/api/crypto/config', {
+  const response = await fetchWithDedup(`${API_URL}/api/crypto/config`, {
     headers: {
       'Authorization': `Bearer ${token}`
     }
@@ -115,7 +116,7 @@ export async function getInvoices(token: string, useCache: boolean = false) {
     }
   }
 
-  const response = await fetchWithDedup('http://localhost:8000/api/crypto/invoices', {
+  const response = await fetchWithDedup(`${API_URL}/api/crypto/invoices`, {
     headers: {
       'Authorization': `Bearer ${token}`
     }
@@ -162,7 +163,7 @@ export function startTokenRefresh() {
       const refreshToken = localStorage.getItem('refresh_token');
       if (!refreshToken) return;
 
-      const response = await fetch('http://localhost:8000/api/auth/refresh', {
+      const response = await fetch(`${API_URL}/api/auth/refresh`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

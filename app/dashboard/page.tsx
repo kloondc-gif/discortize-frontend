@@ -3,7 +3,7 @@
 import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { startTokenRefresh, stopTokenRefresh } from '@/lib/api';
+import { startTokenRefresh, stopTokenRefresh, API_URL } from '@/lib/api';
 
 interface User {
   id: string;
@@ -69,7 +69,7 @@ function DashboardContent() {
   const fetchDashboardStats = async (token: string) => {
     try {
       // Fetch crypto balance
-      const balanceResponse = await fetch('http://localhost:8000/api/crypto/balance', {
+      const balanceResponse = await fetch(`${API_URL}/api/crypto/balance`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -85,7 +85,7 @@ function DashboardContent() {
 
       // Fetch revenue stats for chart
       setLoadingChart(true);
-      const revenueResponse = await fetch('http://localhost:8000/api/stats/revenue?days=30', {
+      const revenueResponse = await fetch(`${API_URL}/api/stats/revenue?days=30`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -122,7 +122,7 @@ function DashboardContent() {
         const parsedUser = JSON.parse(userData);
         
         // Verify token is valid before proceeding
-        const verifyResponse = await fetch('http://localhost:8000/api/discord/check-connection', {
+        const verifyResponse = await fetch(`${API_URL}/api/discord/check-connection`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -131,7 +131,7 @@ function DashboardContent() {
         if (verifyResponse.status === 401) {
           // Token expired, try to refresh
           console.log('Token expired, attempting refresh...');
-          const refreshResponse = await fetch('http://localhost:8000/api/auth/refresh', {
+          const refreshResponse = await fetch(`${API_URL}/api/auth/refresh`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -200,7 +200,7 @@ function DashboardContent() {
 
   const fetchClientId = async () => {
     try {
-      const response = await fetch('http://localhost:8000/api/discord/client-id');
+      const response = await fetch(`${API_URL}/api/discord/client-id`);
       if (response.ok) {
         const data = await response.json();
         setDiscordClientId(data.client_id);
@@ -212,7 +212,7 @@ function DashboardContent() {
 
   const checkDiscordConnection = async (token: string) => {
     try {
-      const response = await fetch('http://localhost:8000/api/discord/check-connection', {
+      const response = await fetch(`${API_URL}/api/discord/check-connection`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -240,7 +240,7 @@ function DashboardContent() {
         return;
       }
 
-      const response = await fetch('http://localhost:8000/api/crypto/request-withdrawal-code', {
+      const response = await fetch(`${API_URL}/api/crypto/request-withdrawal-code`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -278,7 +278,7 @@ function DashboardContent() {
         return;
       }
 
-      const response = await fetch('http://localhost:8000/api/crypto/withdraw-all', {
+      const response = await fetch(`${API_URL}/api/crypto/withdraw-all`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -319,7 +319,7 @@ function DashboardContent() {
 
   const handleOAuthCallback = async (code: string, token: string) => {
     try {
-      const response = await fetch('http://localhost:8000/api/discord/callback', {
+      const response = await fetch(`${API_URL}/api/discord/callback`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -351,7 +351,7 @@ function DashboardContent() {
         return;
       }
 
-      const response = await fetch('http://localhost:8000/api/discord/auth', {
+      const response = await fetch(`${API_URL}/api/discord/auth`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -389,7 +389,7 @@ function DashboardContent() {
     setLoadingGuilds(true);
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:8000/api/discord/guilds', {
+      const response = await fetch(`${API_URL}/api/discord/guilds`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }

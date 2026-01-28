@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { startTokenRefresh, stopTokenRefresh } from '@/lib/api';
+import { startTokenRefresh, stopTokenRefresh, API_URL } from '@/lib/api';
 
 interface User {
   id: string;
@@ -76,7 +76,7 @@ export default function NotificationsPage() {
 
   const fetchClientId = async () => {
     try {
-      const response = await fetch('http://localhost:8000/api/env/discord-client-id');
+      const response = await fetch(`${API_URL}/api/env/discord-client-id`);
       if (response.ok) {
         const data = await response.json();
         setDiscordClientId(data.client_id);
@@ -88,7 +88,7 @@ export default function NotificationsPage() {
 
   const checkDiscordConnection = async (token: string) => {
     try {
-      const response = await fetch('http://localhost:8000/api/discord/check-connection', {
+      const response = await fetch(`${API_URL}/api/discord/check-connection`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -110,7 +110,7 @@ export default function NotificationsPage() {
   const connectDiscord = () => {
     if (!discordClientId) return;
 
-    const redirectUri = encodeURIComponent('http://localhost:8000/api/discord/callback');
+    const redirectUri = encodeURIComponent(`${API_URL}/api/discord/callback`);
     const scope = encodeURIComponent('identify');
     const state = localStorage.getItem('token') || '';
 
@@ -121,7 +121,7 @@ export default function NotificationsPage() {
 
   const fetchNotificationSettings = async (token: string) => {
     try {
-      const response = await fetch('http://localhost:8000/api/users/notification-settings', {
+      const response = await fetch(`${API_URL}/api/users/notification-settings`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -155,7 +155,7 @@ export default function NotificationsPage() {
 
     setSaving(true);
     try {
-      const response = await fetch('http://localhost:8000/api/users/notification-settings', {
+      const response = await fetch(`${API_URL}/api/users/notification-settings`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${token}`,
