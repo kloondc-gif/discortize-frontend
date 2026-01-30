@@ -2,33 +2,9 @@
 
 import Link from 'next/link';
 import { motion } from 'framer-motion';
+import { getAllBlogPosts } from '@/lib/blogData';
 
-const blogPosts = [
-  {
-    slug: 'how-to-monetize-discord-server',
-    title: 'How to Monetize a Discord Server (Step-by-Step Guide)',
-    description: 'Learn how to monetize your Discord server with subscriptions, automation, and recurring revenue — no coding required.',
-    date: 'January 24, 2026',
-    readTime: '5 min read',
-    category: 'Monetization',
-  },
-  {
-    slug: 'create-paid-discord-server-10-minutes',
-    title: 'How to Create a Paid Discord Server in Under 10 Minutes',
-    description: 'Step-by-step guide to launching a paid Discord server fast using automated subscriptions.',
-    date: 'January 24, 2026',
-    readTime: '4 min read',
-    category: 'Tutorial',
-  },
-  {
-    slug: 'how-much-money-paid-discord-server',
-    title: 'How Much Money Can You Make From a Paid Discord Server?',
-    description: 'Realistic earnings examples from paid Discord servers and subscription communities.',
-    date: 'January 24, 2026',
-    readTime: '3 min read',
-    category: 'Income',
-  },
-];
+const blogPosts = getAllBlogPosts();
 
 export default function BlogsPage() {
   return (

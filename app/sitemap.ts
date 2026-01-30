@@ -1,14 +1,11 @@
 import { MetadataRoute } from 'next';
+import { getAllBlogPosts } from '@/lib/blogData';
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl = 'https://discortize.com';
   
-  // Define your blog post slugs
-  const blogPosts = [
-    'how-to-monetize-discord-server',
-    'create-paid-discord-server-10-minutes',
-    'how-much-money-paid-discord-server'
-  ];
+  // Get all blog posts from blogData
+  const allBlogPosts = getAllBlogPosts();
 
   return [
     {
@@ -23,9 +20,9 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: 'weekly',
       priority: 0.9,
     },
-    ...blogPosts.map((slug) => ({
-      url: `${baseUrl}/blogs/${slug}`,
-      lastModified: new Date(),
+    ...allBlogPosts.map((post) => ({
+      url: `${baseUrl}/blogs/${post.slug}`,
+      lastModified: new Date(post.date),
       changeFrequency: 'monthly' as const,
       priority: 0.8,
     })),
@@ -40,12 +37,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
       lastModified: new Date(),
       changeFrequency: 'monthly',
       priority: 0.6,
-    },
-    {
-      url: `${baseUrl}/dashboard`,
-      lastModified: new Date(),
-      changeFrequency: 'daily',
-      priority: 0.7,
     },
   ];
 }
