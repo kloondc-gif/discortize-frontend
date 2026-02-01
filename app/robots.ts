@@ -13,6 +13,6 @@ export default function robots(): MetadataRoute.Robots {
         allow: ['/blogs/', '/blogs/*'],
       },
     ],
-    sitemap: 'https://discortize.com/sitemap.xml',
+    sitemap: 'https://www.discortize.com/sitemap.xml',
   };
 }
