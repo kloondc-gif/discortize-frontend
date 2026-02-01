@@ -251,6 +251,42 @@ export default async function BlogPost({ params }: { params: Promise<{ slug: str
 
       {/* Article */}
       <article style={{ maxWidth: '800px', margin: '0 auto', padding: '80px 24px 100px' }}>
+        
+        {/* Schema.org structured data for SEO */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "Article",
+              "headline": post.title,
+              "description": post.metaDescription,
+              "url": `https://www.discortize.com/blogs/${slug}`,
+              "datePublished": new Date(post.date).toISOString(),
+              "dateModified": new Date(post.date).toISOString(),
+              "author": {
+                "@type": "Organization",
+                "name": "Discortize"
+              },
+              "publisher": {
+                "@type": "Organization",
+                "name": "Discortize",
+                "url": "https://www.discortize.com",
+                "logo": {
+                  "@type": "ImageObject",
+                  "url": "https://www.discortize.com/discortize-logo.png"
+                }
+              },
+              "mainEntityOfPage": {
+                "@type": "WebPage",
+                "@id": `https://www.discortize.com/blogs/${slug}`
+              },
+              "articleSection": post.category,
+              "keywords": post.metaDescription.split(' ').slice(0, 10).join(', ')
+            })
+          }}
+        />
+
         <div>
           {/* Back to Blog */}
           <a 

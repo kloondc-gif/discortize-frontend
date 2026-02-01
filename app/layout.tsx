@@ -14,14 +14,14 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Discortize - Monetize your Discord in seconds.",
-  description: "Discortize makes it possible to launch your paid Discord community, to generate consistent income. Manage access, subscriptions, payments, affiliates — all done for you.",
+  description: "Accept Bitcoin, Ethereum, Litecoin, and Solana payments on Discord. Automate subscriptions, role management, and access control for your crypto community. Start earning in minutes.",
   icons: {
     icon: '/favicon.png',
     apple: '/favicon.png',
   },
   openGraph: {
     title: "Discortize - Monetize your Discord in seconds.",
-    description: "Launch paid Discord communities, manage subscriptions, automate access, accept payments, and grow recurring revenue.",
+    description: "Accept Bitcoin, Ethereum, Litecoin, and Solana payments on Discord. Automate subscriptions, role management, and access control. Built for crypto communities.",
     url: 'https://discortize.com',
     siteName: 'Discortize',
     images: [
@@ -38,7 +38,7 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: "Discortize - Monetize your Discord in seconds.",
-    description: "Launch paid Discord communities, manage subscriptions, automate access, accept payments, and grow recurring revenue.",
+    description: "Accept Bitcoin, Ethereum, Litecoin, and Solana payments on Discord. Automate subscriptions, role management, and access control. Built for crypto communities.",
     images: ['/og-image.png'],
   },
 };
