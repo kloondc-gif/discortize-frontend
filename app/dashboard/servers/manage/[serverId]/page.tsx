@@ -11,6 +11,7 @@ interface User {
   username: string;
   email_verified: boolean;
   created_at?: string;
+  discord_username?: string;
 }
 
 interface DiscordGuild {
@@ -44,6 +45,7 @@ export default function ManageServerPage() {
   const [loadingSubscriptions, setLoadingSubscriptions] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [discordUsername, setDiscordUsername] = useState<string | null>(null);
   
   // Form state
   const [formData, setFormData] = useState({
@@ -72,6 +74,7 @@ export default function ManageServerPage() {
       
       fetchGuildDetails(token);
       fetchSubscriptions(token);
+      fetchDiscordConnection(token);
     } catch (error) {
       console.error('Error parsing user data:', error);
       router.push('/login');
@@ -82,6 +85,25 @@ export default function ManageServerPage() {
       stopTokenRefresh();
     };
   }, [router, serverId]);
+
+  const fetchDiscordConnection = async (token: string) => {
+    try {
+      const response = await fetch(`${API_URL}/api/discord/check-connection`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.connected && data.username) {
+          setDiscordUsername(data.username);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching Discord connection:', error);
+    }
+  };
 
   const fetchGuildDetails = async (token: string) => {
     try {
@@ -191,9 +213,9 @@ export default function ManageServerPage() {
         body: JSON.stringify({
           name: formData.name,
           description: formData.description || null,
-          price: parseFloat(formData.price),
-          duration: `${formData.duration_days} days`,
-          duration_days: parseInt(formData.duration_days),
+          price: formData.price === 'Free' ? 0 : parseFloat(formData.price),
+          duration: formData.duration_days === 'Lifetime' ? 'Lifetime' : `${formData.duration_days} days`,
+          duration_days: formData.duration_days === 'Lifetime' ? 0 : parseInt(formData.duration_days),
           role_id: formData.role_id,
           payment_methods: ['ltc', 'sol', 'btc', 'eth'],
           enabled: true
@@ -284,8 +306,8 @@ export default function ManageServerPage() {
       setFormData({
         name: subscription.name,
         description: subscription.description || '',
-        price: subscription.price.toString(),
-        duration_days: subscription.duration_days.toString(),
+        price: subscription.price === 0 ? 'Free' : subscription.price.toString(),
+        duration_days: subscription.duration_days === 0 ? 'Lifetime' : subscription.duration_days.toString(),
         role_id: subscription.role_id
       });
     }
@@ -310,9 +332,9 @@ export default function ManageServerPage() {
         body: JSON.stringify({
           name: formData.name,
           description: formData.description || null,
-          price: parseFloat(formData.price),
-          duration: `${formData.duration_days} days`,
-          duration_days: parseInt(formData.duration_days),
+          price: formData.price === 'Free' ? 0 : parseFloat(formData.price),
+          duration: formData.duration_days === 'Lifetime' ? 'Lifetime' : `${formData.duration_days} days`,
+          duration_days: formData.duration_days === 'Lifetime' ? 0 : parseInt(formData.duration_days),
           role_id: formData.role_id
         })
       });
@@ -448,7 +470,7 @@ export default function ManageServerPage() {
               textAlign: 'center'
             }}
           >
-            {user.username}
+            {discordUsername || user.username}
           </button>
 
           <Link
@@ -555,6 +577,30 @@ export default function ManageServerPage() {
           >
             <img src="/buy-crypto-svgrepo-com.svg" alt="" style={{ width: '20px', height: '20px' }} />
             Payments
+          </Link>
+
+          <Link
+            href="/dashboard/payouts"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.75rem',
+              padding: '0.75rem 1rem',
+              color: '#000',
+              textDecoration: 'none',
+              fontSize: '1.1rem',
+              fontWeight: '700',
+              borderRadius: '16px',
+              transition: 'background-color 0.2s'
+            }}
+            onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#f5f5f5'}
+            onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="12" y1="1" x2="12" y2="23"/>
+              <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+            </svg>
+            Payouts
           </Link>
 
           <Link
@@ -826,23 +872,40 @@ export default function ManageServerPage() {
                     }}>
                       Price (USD) *
                     </label>
-                    <input
-                      type="number"
-                      name="price"
-                      value={formData.price}
-                      onChange={handleInputChange}
-                      required
-                      min="0"
-                      step="0.01"
-                      placeholder="9.99"
-                      style={{
-                        width: '100%',
-                        padding: '0.75rem',
-                        border: '1px solid #ddd',
-                        borderRadius: '6px',
-                        fontSize: '0.95rem'
-                      }}
-                    />
+                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                      <input
+                        type="text"
+                        name="price"
+                        value={formData.price}
+                        onChange={handleInputChange}
+                        required
+                        placeholder="9.99"
+                        style={{
+                          flex: '1',
+                          padding: '0.75rem',
+                          border: '1px solid #ddd',
+                          borderRadius: '6px',
+                          fontSize: '0.95rem'
+                        }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setFormData({...formData, price: 'Free'})}
+                        style={{
+                          padding: '0.75rem 1rem',
+                          backgroundColor: '#000',
+                          color: '#fff',
+                          border: 'none',
+                          borderRadius: '6px',
+                          fontSize: '0.85rem',
+                          fontWeight: '500',
+                          cursor: 'pointer',
+                          whiteSpace: 'nowrap'
+                        }}
+                      >
+                        Free
+                      </button>
+                    </div>
                   </div>
 
                   <div>
@@ -854,22 +917,40 @@ export default function ManageServerPage() {
                     }}>
                       Duration (days) *
                     </label>
-                    <input
-                      type="number"
-                      name="duration_days"
-                      value={formData.duration_days}
-                      onChange={handleInputChange}
-                      required
-                      min="1"
-                      placeholder="30"
-                      style={{
-                        width: '100%',
-                        padding: '0.75rem',
-                        border: '1px solid #ddd',
-                        borderRadius: '6px',
-                        fontSize: '0.95rem'
-                      }}
-                    />
+                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                      <input
+                        type="text"
+                        name="duration_days"
+                        value={formData.duration_days}
+                        onChange={handleInputChange}
+                        required
+                        placeholder="30"
+                        style={{
+                          flex: '1',
+                          padding: '0.75rem',
+                          border: '1px solid #ddd',
+                          borderRadius: '6px',
+                          fontSize: '0.95rem'
+                        }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setFormData({...formData, duration_days: 'Lifetime'})}
+                        style={{
+                          padding: '0.75rem 1rem',
+                          backgroundColor: '#000',
+                          color: '#fff',
+                          border: 'none',
+                          borderRadius: '6px',
+                          fontSize: '0.85rem',
+                          fontWeight: '500',
+                          cursor: 'pointer',
+                          whiteSpace: 'nowrap'
+                        }}
+                      >
+                        Lifetime
+                      </button>
+                    </div>
                   </div>
                 </div>
 
@@ -996,8 +1077,8 @@ export default function ManageServerPage() {
                           fontSize: '0.9rem',
                           color: '#666'
                         }}>
-                          <span><strong>Price:</strong> ${subscription.price.toFixed(2)}</span>
-                          <span><strong>Duration:</strong> {subscription.duration_days} days</span>
+                          <span><strong>Price:</strong> {subscription.price === 0 ? 'Free' : `$${subscription.price.toFixed(2)}`}</span>
+                          <span><strong>Duration:</strong> {subscription.duration_days === 0 ? 'Lifetime' : `${subscription.duration_days} days`}</span>
                           <span><strong>Role ID:</strong> {subscription.role_id}</span>
                         </div>
                       </div>
@@ -1110,23 +1191,40 @@ export default function ManageServerPage() {
                             }}>
                               Price (USD) *
                             </label>
-                            <input
-                              type="number"
-                              name="price"
-                              value={formData.price}
-                              onChange={handleInputChange}
-                              required
-                              min="0"
-                              step="0.01"
-                              placeholder="10.00"
-                              style={{
-                                width: '100%',
-                                padding: '0.75rem',
-                                border: '1px solid #ddd',
-                                borderRadius: '6px',
-                                fontSize: '0.95rem'
-                              }}
-                            />
+                            <div style={{ display: 'flex', gap: '0.5rem' }}>
+                              <input
+                                type="text"
+                                name="price"
+                                value={formData.price}
+                                onChange={handleInputChange}
+                                required
+                                placeholder="10.00"
+                                style={{
+                                  flex: '1',
+                                  padding: '0.75rem',
+                                  border: '1px solid #ddd',
+                                  borderRadius: '6px',
+                                  fontSize: '0.95rem'
+                                }}
+                              />
+                              <button
+                                type="button"
+                                onClick={() => setFormData({...formData, price: 'Free'})}
+                                style={{
+                                  padding: '0.75rem 1rem',
+                                  backgroundColor: '#000',
+                                  color: '#fff',
+                                  border: 'none',
+                                  borderRadius: '6px',
+                                  fontSize: '0.85rem',
+                                  fontWeight: '500',
+                                  cursor: 'pointer',
+                                  whiteSpace: 'nowrap'
+                                }}
+                              >
+                                Free
+                              </button>
+                            </div>
                           </div>
 
                           <div>
@@ -1138,22 +1236,40 @@ export default function ManageServerPage() {
                             }}>
                               Duration (days) *
                             </label>
-                            <input
-                              type="number"
-                              name="duration_days"
-                              value={formData.duration_days}
-                              onChange={handleInputChange}
-                              required
-                              min="1"
-                              placeholder="30"
-                              style={{
-                                width: '100%',
-                                padding: '0.75rem',
-                                border: '1px solid #ddd',
-                                borderRadius: '6px',
-                                fontSize: '0.95rem'
-                              }}
-                            />
+                            <div style={{ display: 'flex', gap: '0.5rem' }}>
+                              <input
+                                type="text"
+                                name="duration_days"
+                                value={formData.duration_days}
+                                onChange={handleInputChange}
+                                required
+                                placeholder="30"
+                                style={{
+                                  flex: '1',
+                                  padding: '0.75rem',
+                                  border: '1px solid #ddd',
+                                  borderRadius: '6px',
+                                  fontSize: '0.95rem'
+                                }}
+                              />
+                              <button
+                                type="button"
+                                onClick={() => setFormData({...formData, duration_days: 'Lifetime'})}
+                                style={{
+                                  padding: '0.75rem 1rem',
+                                  backgroundColor: '#000',
+                                  color: '#fff',
+                                  border: 'none',
+                                  borderRadius: '6px',
+                                  fontSize: '0.85rem',
+                                  fontWeight: '500',
+                                  cursor: 'pointer',
+                                  whiteSpace: 'nowrap'
+                                }}
+                              >
+                                Lifetime
+                              </button>
+                            </div>
                           </div>
                         </div>
 

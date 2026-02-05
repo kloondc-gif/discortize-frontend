@@ -287,7 +287,7 @@ function DiscordConnectionContent() {
 
   const getBotInviteUrl = (guildId: string) => {
     if (!discordClientId) return '#';
-    return `https://discord.com/api/oauth2/authorize?client_id=${discordClientId}&permissions=2048&scope=bot&guild_id=${guildId}`;
+    return `https://discord.com/api/oauth2/authorize?client_id=${discordClientId}&permissions=268520448&integration_type=0&scope=bot+applications.commands&guild_id=${guildId}`;
   };
 
   if (loading) {

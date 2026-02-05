@@ -51,6 +51,27 @@ function DashboardContent() {
   const [hoveredDataIndex, setHoveredDataIndex] = useState<number | null>(null);
   const [loadingChart, setLoadingChart] = useState(false);
   
+  // Date range picker states
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [selectedRange, setSelectedRange] = useState<'today' | '7days' | '30days' | '90days' | '365days' | 'all'>('30days');
+  
+  const dateRangeOptions = [
+    { value: 'today', label: 'Today', days: 1 },
+    { value: '7days', label: 'Last 7 Days', days: 7 },
+    { value: '30days', label: 'Last 30 Days', days: 30 },
+    { value: '90days', label: 'Last 90 Days', days: 90 },
+    { value: '365days', label: 'This Year', days: 365 },
+    { value: 'all', label: 'All Time', days: 3650 },
+  ];
+  
+  const getDateRangeLabel = () => {
+    return dateRangeOptions.find(opt => opt.value === selectedRange)?.label || 'Last 30 Days';
+  };
+  
+  const getDateRangeDays = () => {
+    return dateRangeOptions.find(opt => opt.value === selectedRange)?.days || 30;
+  };
+  
   // Withdrawal modal states
   const [showWithdrawModal, setShowWithdrawModal] = useState(false);
   const [withdrawalStep, setWithdrawalStep] = useState<'confirm' | 'code' | 'processing' | 'success' | 'error'>('confirm');
@@ -66,7 +87,7 @@ function DashboardContent() {
     balance: 0
   });
 
-  const fetchDashboardStats = async (token: string) => {
+  const fetchDashboardStats = async (token: string, days?: number) => {
     try {
       // Fetch crypto balance
       const balanceResponse = await fetch(`${API_URL}/api/crypto/balance`, {
@@ -85,7 +106,8 @@ function DashboardContent() {
 
       // Fetch revenue stats for chart
       setLoadingChart(true);
-      const revenueResponse = await fetch(`${API_URL}/api/stats/revenue?days=30`, {
+      const daysParam = days || getDateRangeDays();
+      const revenueResponse = await fetch(`${API_URL}/api/stats/revenue?days=${daysParam}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -106,6 +128,14 @@ function DashboardContent() {
       setLoadingChart(false);
     }
   };
+  
+  // Refetch when date range changes
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (token && !loading) {
+      fetchDashboardStats(token);
+    }
+  }, [selectedRange]);
 
   useEffect(() => {
     const initializeDashboard = async () => {
@@ -666,6 +696,30 @@ function DashboardContent() {
           </Link>
 
           <Link
+            href="/dashboard/payouts"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.75rem',
+              padding: '0.75rem 1rem',
+              color: '#000',
+              textDecoration: 'none',
+              fontSize: '1.1rem',
+              fontWeight: '700',
+              borderRadius: '16px',
+              transition: 'background-color 0.2s'
+            }}
+            onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#f5f5f5'}
+            onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="12" y1="1" x2="12" y2="23"/>
+              <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+            </svg>
+            Payouts
+          </Link>
+
+          <Link
             href="/dashboard/plans"
             style={{
               display: 'flex',
@@ -763,22 +817,19 @@ function DashboardContent() {
               <div style={{
                 backgroundColor: '#000',
                 color: '#fff',
-                borderRadius: '12px',
-                padding: '2rem',
-                marginBottom: '2rem',
+                borderRadius: '16px',
+                padding: '1.5rem 2rem',
+                marginBottom: '1.5rem',
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center'
               }}>
                 <div>
-                  <div style={{ fontSize: '0.875rem', fontWeight: '500', marginBottom: '0.5rem', opacity: 0.8 }}>
-                    Current Balance
+                  <div style={{ fontSize: '0.8125rem', fontWeight: '500', marginBottom: '0.25rem', color: 'rgba(255,255,255,0.7)' }}>
+                    Available Balance
                   </div>
-                  <div style={{ fontSize: '2.5rem', fontWeight: '700', marginBottom: '0.5rem' }}>
+                  <div style={{ fontSize: '2rem', fontWeight: '700', letterSpacing: '-0.025em' }}>
                     ${stats.balance.toFixed(2)}
-                  </div>
-                  <div style={{ fontSize: '0.875rem', opacity: 0.7 }}>
-                    Available for withdrawal
                   </div>
                 </div>
                 <button
@@ -792,22 +843,19 @@ function DashboardContent() {
                     color: '#000',
                     border: 'none',
                     borderRadius: '8px',
-                    padding: '0.75rem 1.5rem',
+                    padding: '0.625rem 1.25rem',
                     fontSize: '0.875rem',
                     fontWeight: '600',
                     cursor: 'pointer',
-                    transition: 'all 0.2s',
-                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                    transition: 'all 0.15s'
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = '#f0f0f0';
-                    e.currentTarget.style.transform = 'translateY(-2px)';
-                    e.currentTarget.style.boxShadow = '0 4px 8px rgba(0,0,0,0.15)';
+                    e.currentTarget.style.backgroundColor = '#f3f4f6';
+                    e.currentTarget.style.transform = 'scale(1.02)';
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.backgroundColor = '#fff';
-                    e.currentTarget.style.transform = 'translateY(0)';
-                    e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
+                    e.currentTarget.style.transform = 'scale(1)';
                   }}
                 >
                   Withdraw
@@ -817,94 +865,130 @@ function DashboardContent() {
               {/* Statistics Grid */}
               <div style={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-                gap: '1.5rem',
-                marginBottom: '2rem'
+                gridTemplateColumns: 'repeat(3, 1fr)',
+                gap: '1rem',
+                marginBottom: '1.5rem'
               }}>
                 {/* Revenue Card */}
                 <div style={{
                   backgroundColor: '#fff',
-                  border: '1px solid #e0e0e0',
+                  border: '1px solid #e5e7eb',
                   borderRadius: '12px',
-                  padding: '1.5rem'
-                }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
+                  padding: '1.25rem',
+                  transition: 'all 0.2s',
+                  cursor: 'default'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = '#d1d5db';
+                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.05)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = '#e5e7eb';
+                  e.currentTarget.style.boxShadow = 'none';
+                }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                     <div>
-                      <div style={{ fontSize: '0.875rem', color: '#666', marginBottom: '0.5rem' }}>Revenue</div>
-                      <div style={{ fontSize: '2rem', fontWeight: '700', color: '#000' }}>${stats.revenue.toFixed(2)}</div>
+                      <div style={{ fontSize: '0.8125rem', color: '#6b7280', marginBottom: '0.375rem', fontWeight: '500' }}>Total Revenue</div>
+                      <div style={{ fontSize: '1.75rem', fontWeight: '700', color: '#000', letterSpacing: '-0.025em' }}>${stats.revenue.toFixed(2)}</div>
                     </div>
                     <div style={{
-                      width: '40px',
-                      height: '40px',
-                      backgroundColor: '#f5f5f5',
+                      width: '36px',
+                      height: '36px',
+                      backgroundColor: '#f3f4f6',
                       borderRadius: '8px',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center'
                     }}>
-                      <img src="/currency-revenue-solid-svgrepo-com.svg" alt="" style={{ width: '20px', height: '20px' }} />
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6b7280" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <line x1="12" y1="1" x2="12" y2="23"></line>
+                        <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                      </svg>
                     </div>
-                  </div>
-                  <div style={{ fontSize: '0.75rem', color: '#22c55e', fontWeight: '500' }}>
-                    +0% from last month
                   </div>
                 </div>
 
-                {/* New Orders Card */}
+                {/* Orders Card */}
                 <div style={{
                   backgroundColor: '#fff',
-                  border: '1px solid #e0e0e0',
+                  border: '1px solid #e5e7eb',
                   borderRadius: '12px',
-                  padding: '1.5rem'
-                }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
+                  padding: '1.25rem',
+                  transition: 'all 0.2s',
+                  cursor: 'default'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = '#d1d5db';
+                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.05)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = '#e5e7eb';
+                  e.currentTarget.style.boxShadow = 'none';
+                }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                     <div>
-                      <div style={{ fontSize: '0.875rem', color: '#666', marginBottom: '0.5rem' }}>New Orders</div>
-                      <div style={{ fontSize: '2rem', fontWeight: '700', color: '#000' }}>{stats.orders}</div>
+                      <div style={{ fontSize: '0.8125rem', color: '#6b7280', marginBottom: '0.375rem', fontWeight: '500' }}>Total Orders</div>
+                      <div style={{ fontSize: '1.75rem', fontWeight: '700', color: '#000', letterSpacing: '-0.025em' }}>{stats.orders}</div>
                     </div>
                     <div style={{
-                      width: '40px',
-                      height: '40px',
-                      backgroundColor: '#f5f5f5',
+                      width: '36px',
+                      height: '36px',
+                      backgroundColor: '#f3f4f6',
                       borderRadius: '8px',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center'
                     }}>
-                      <img src="/product-svgrepo-com.svg" alt="" style={{ width: '20px', height: '20px' }} />
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6b7280" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+                        <line x1="3" y1="6" x2="21" y2="6"></line>
+                        <path d="M16 10a4 4 0 0 1-8 0"></path>
+                      </svg>
                     </div>
-                  </div>
-                  <div style={{ fontSize: '0.75rem', color: '#22c55e', fontWeight: '500' }}>
-                    +0% from last month
                   </div>
                 </div>
 
-                {/* New Customers Card */}
+                {/* Customers Card */}
                 <div style={{
                   backgroundColor: '#fff',
-                  border: '1px solid #e0e0e0',
+                  border: '1px solid #e5e7eb',
                   borderRadius: '12px',
-                  padding: '1.5rem'
-                }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
+                  padding: '1.25rem',
+                  transition: 'all 0.2s',
+                  cursor: 'default'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = '#d1d5db';
+                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.05)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = '#e5e7eb';
+                  e.currentTarget.style.boxShadow = 'none';
+                }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                     <div>
-                      <div style={{ fontSize: '0.875rem', color: '#666', marginBottom: '0.5rem' }}>New Customers</div>
-                      <div style={{ fontSize: '2rem', fontWeight: '700', color: '#000' }}>{stats.customers}</div>
+                      <div style={{ fontSize: '0.8125rem', color: '#6b7280', marginBottom: '0.375rem', fontWeight: '500' }}>Customers</div>
+                      <div style={{ fontSize: '1.75rem', fontWeight: '700', color: '#000', letterSpacing: '-0.025em' }}>{stats.customers}</div>
                     </div>
                     <div style={{
-                      width: '40px',
-                      height: '40px',
-                      backgroundColor: '#f5f5f5',
+                      width: '36px',
+                      height: '36px',
+                      backgroundColor: '#f3f4f6',
                       borderRadius: '8px',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center'
                     }}>
-                      <img src="/friend-group-members-svgrepo-com.svg" alt="" style={{ width: '20px', height: '20px' }} />
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6b7280" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="9" cy="7" r="4"></circle>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                      </svg>
                     </div>
-                  </div>
-                  <div style={{ fontSize: '0.75rem', color: '#22c55e', fontWeight: '500' }}>
-                    +0% from last month
                   </div>
                 </div>
               </div>
@@ -912,14 +996,105 @@ function DashboardContent() {
               {/* Revenue & Orders Chart */}
               <div style={{
                 backgroundColor: '#fff',
-                border: '1px solid #e0e0e0',
+                border: '1px solid #e5e7eb',
                 borderRadius: '12px',
                 padding: '1.5rem',
-                marginBottom: '2rem'
+                marginBottom: '1.5rem'
               }}>
-                <h3 style={{ fontSize: '1.125rem', fontWeight: '700', marginBottom: '1.5rem', color: '#000' }}>
-                  Revenue & Orders (Last 30 Days)
-                </h3>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                  <h3 style={{ fontSize: '1.125rem', fontWeight: '700', color: '#000', margin: 0 }}>
+                    Revenue & Orders
+                  </h3>
+                  
+                  {/* Date Range Picker */}
+                  <div style={{ position: 'relative' }}>
+                    <button
+                      onClick={() => setShowDatePicker(!showDatePicker)}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                        padding: '0.5rem 1rem',
+                        backgroundColor: '#000',
+                        color: '#fff',
+                        border: 'none',
+                        borderRadius: '8px',
+                        fontSize: '0.875rem',
+                        fontWeight: '500',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s'
+                      }}
+                      onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#333'}
+                      onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#000'}
+                    >
+                      <svg width="16" height="16" viewBox="0 0 256 256" fill="currentColor">
+                        <path d="M208,32H184V24a8,8,0,0,0-16,0v8H88V24a8,8,0,0,0-16,0v8H48A16,16,0,0,0,32,48V208a16,16,0,0,0,16,16H208a16,16,0,0,0,16-16V48A16,16,0,0,0,208,32ZM72,48v8a8,8,0,0,0,16,0V48h80v8a8,8,0,0,0,16,0V48h24V80H48V48ZM208,208H48V96H208V208Z"/>
+                      </svg>
+                      {getDateRangeLabel()}
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="6 9 12 15 18 9"></polyline>
+                      </svg>
+                    </button>
+                    
+                    {/* Dropdown Menu */}
+                    {showDatePicker && (
+                      <>
+                        {/* Backdrop to close dropdown */}
+                        <div 
+                          style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 49 }}
+                          onClick={() => setShowDatePicker(false)}
+                        />
+                        <div style={{
+                          position: 'absolute',
+                          top: 'calc(100% + 8px)',
+                          right: 0,
+                          backgroundColor: '#fff',
+                          border: '1px solid #e0e0e0',
+                          borderRadius: '12px',
+                          boxShadow: '0 10px 40px rgba(0,0,0,0.15)',
+                          minWidth: '180px',
+                          zIndex: 50,
+                          overflow: 'hidden'
+                        }}>
+                          {dateRangeOptions.map((option) => (
+                            <button
+                              key={option.value}
+                              onClick={() => {
+                                setSelectedRange(option.value as any);
+                                setShowDatePicker(false);
+                              }}
+                              style={{
+                                width: '100%',
+                                padding: '0.75rem 1rem',
+                                backgroundColor: selectedRange === option.value ? '#f5f5f5' : 'transparent',
+                                color: selectedRange === option.value ? '#000' : '#333',
+                                border: 'none',
+                                borderBottom: '1px solid #f0f0f0',
+                                fontSize: '0.875rem',
+                                fontWeight: selectedRange === option.value ? '600' : '400',
+                                cursor: 'pointer',
+                                textAlign: 'left',
+                                transition: 'all 0.15s'
+                              }}
+                              onMouseEnter={(e) => {
+                                if (selectedRange !== option.value) {
+                                  e.currentTarget.style.backgroundColor = '#fafafa';
+                                }
+                              }}
+                              onMouseLeave={(e) => {
+                                if (selectedRange !== option.value) {
+                                  e.currentTarget.style.backgroundColor = 'transparent';
+                                }
+                              }}
+                            >
+                              {option.label}
+                            </button>
+                          ))}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
                 {loadingChart ? (
                   <div style={{
                     height: '300px',
@@ -953,6 +1128,32 @@ function DashboardContent() {
                   </div>
                 ) : (
                   <div style={{ position: 'relative', height: '320px', padding: '0 0 0 40px' }}>
+                    {(() => {
+                      // Aggregate data if there are too many points (for better visualization)
+                      const aggregateData = (data: typeof revenueChartData, maxPoints: number) => {
+                        if (data.length <= maxPoints) return data;
+                        
+                        const chunkSize = Math.ceil(data.length / maxPoints);
+                        const aggregated: typeof revenueChartData = [];
+                        
+                        for (let i = 0; i < data.length; i += chunkSize) {
+                          const chunk = data.slice(i, i + chunkSize);
+                          const totalRevenue = chunk.reduce((sum, d) => sum + d.revenue, 0);
+                          const totalOrders = chunk.reduce((sum, d) => sum + d.orders, 0);
+                          aggregated.push({
+                            date: chunk[Math.floor(chunk.length / 2)].date,
+                            revenue: totalRevenue,
+                            orders: totalOrders
+                          });
+                        }
+                        return aggregated;
+                      };
+                      
+                      // Limit to 60 points max for smooth visualization
+                      const chartData = aggregateData(revenueChartData, 60);
+                      
+                      return (
+                        <>
                     {/* SVG Area Chart */}
                     <svg
                       width="100%"
@@ -963,8 +1164,8 @@ function DashboardContent() {
                       onMouseMove={(e) => {
                         const rect = e.currentTarget.getBoundingClientRect();
                         const x = ((e.clientX - rect.left) / rect.width) * 800;
-                        const index = Math.round((x / 800) * (revenueChartData.length - 1));
-                        if (index >= 0 && index < revenueChartData.length) {
+                        const index = Math.round((x / 800) * (chartData.length - 1));
+                        if (index >= 0 && index < chartData.length) {
                           setHoveredDataIndex(index);
                         }
                       }}
@@ -972,40 +1173,56 @@ function DashboardContent() {
                     >
                       <defs>
                         <linearGradient id="areaGradient" x1="0" x2="0" y1="0" y2="1">
-                          <stop offset="0%" stopColor="rgba(96, 165, 250, 0.4)" />
-                          <stop offset="100%" stopColor="rgba(96, 165, 250, 0.05)" />
+                          <stop offset="0%" stopColor="rgba(0, 0, 0, 0.12)" />
+                          <stop offset="100%" stopColor="rgba(0, 0, 0, 0.02)" />
                         </linearGradient>
                       </defs>
                       
                       {(() => {
-                        const maxRevenue = Math.max(...revenueChartData.map(d => d.revenue), 1);
+                        const maxRevenue = Math.max(...chartData.map(d => d.revenue), 1);
                         const width = 800;
                         const height = 260;
                         const paddingTop = 30;
                         const paddingBottom = 20;
                         const chartHeight = height - paddingTop - paddingBottom;
                         
-                        // Calculate points for the line
-                        const points = revenueChartData.map((data, index) => {
-                          const x = (index / (revenueChartData.length - 1)) * width;
+                        // Calculate points for the line with proper spacing
+                        const dataLength = chartData.length;
+                        const points = chartData.map((data, index) => {
+                          const x = dataLength > 1 ? (index / (dataLength - 1)) * width : width / 2;
                           const y = paddingTop + chartHeight - (data.revenue / maxRevenue) * chartHeight;
                           return { x, y, data };
                         });
                         
-                        // Create smooth curve path using quadratic bezier curves
-                        let pathD = `M ${points[0].x} ${points[0].y}`;
-                        for (let i = 0; i < points.length - 1; i++) {
-                          const current = points[i];
-                          const next = points[i + 1];
-                          const midX = (current.x + next.x) / 2;
-                          pathD += ` Q ${current.x} ${current.y}, ${midX} ${(current.y + next.y) / 2}`;
-                          if (i === points.length - 2) {
-                            pathD += ` Q ${next.x} ${next.y}, ${next.x} ${next.y}`;
+                        // Create smooth curve using Catmull-Rom spline for better curves
+                        const createSmoothPath = (pts: {x: number, y: number}[]) => {
+                          if (pts.length < 2) return `M ${pts[0]?.x || 0} ${pts[0]?.y || 0}`;
+                          if (pts.length === 2) return `M ${pts[0].x} ${pts[0].y} L ${pts[1].x} ${pts[1].y}`;
+                          
+                          let d = `M ${pts[0].x} ${pts[0].y}`;
+                          
+                          for (let i = 0; i < pts.length - 1; i++) {
+                            const p0 = pts[Math.max(0, i - 1)];
+                            const p1 = pts[i];
+                            const p2 = pts[i + 1];
+                            const p3 = pts[Math.min(pts.length - 1, i + 2)];
+                            
+                            // Control points for smooth bezier
+                            const cp1x = p1.x + (p2.x - p0.x) / 6;
+                            const cp1y = p1.y + (p2.y - p0.y) / 6;
+                            const cp2x = p2.x - (p3.x - p1.x) / 6;
+                            const cp2y = p2.y - (p3.y - p1.y) / 6;
+                            
+                            d += ` C ${cp1x},${cp1y} ${cp2x},${cp2y} ${p2.x},${p2.y}`;
                           }
-                        }
+                          
+                          return d;
+                        };
+                        
+                        const pathD = createSmoothPath(points);
                         
                         // Create area path (line + close to bottom)
-                        const areaPath = `${pathD} L ${width} ${height - paddingBottom} L 0 ${height - paddingBottom} Z`;
+                        const areaPath = `${pathD} L ${points[points.length - 1]?.x || width} ${height - paddingBottom} L ${points[0]?.x || 0} ${height - paddingBottom} Z`;
                         
                         // Get hovered point data
                         const hoveredPoint = hoveredDataIndex !== null ? points[hoveredDataIndex] : null;
@@ -1020,9 +1237,8 @@ function DashboardContent() {
                                 y1={paddingTop + chartHeight * (1 - ratio)}
                                 x2={width}
                                 y2={paddingTop + chartHeight * (1 - ratio)}
-                                stroke="#f3f4f6"
+                                stroke="#e5e7eb"
                                 strokeWidth="1"
-                                strokeDasharray="4 4"
                               />
                             ))}
                             
@@ -1033,35 +1249,12 @@ function DashboardContent() {
                                 x="10"
                                 y={paddingTop + chartHeight * (1 - ratio) + 4}
                                 fontSize="11"
-                                fill="#999"
+                                fill="#9ca3af"
                                 fontFamily="system-ui, -apple-system, sans-serif"
                               >
                                 ${(maxRevenue * ratio).toFixed(2)}
                               </text>
                             ))}
-                            
-                            {/* Hover vertical line */}
-                            {hoveredPoint && (
-                              <>
-                                <line
-                                  x1={hoveredPoint.x}
-                                  y1={paddingTop}
-                                  x2={hoveredPoint.x}
-                                  y2={height - paddingBottom}
-                                  stroke="#94a3b8"
-                                  strokeWidth="1"
-                                  strokeDasharray="4 4"
-                                />
-                                <circle
-                                  cx={hoveredPoint.x}
-                                  cy={hoveredPoint.y}
-                                  r="6"
-                                  fill="#60a5fa"
-                                  stroke="#fff"
-                                  strokeWidth="3"
-                                />
-                              </>
-                            )}
                             
                             {/* Area fill */}
                             <path
@@ -1073,11 +1266,38 @@ function DashboardContent() {
                             <path
                               d={pathD}
                               fill="none"
-                              stroke="#60a5fa"
-                              strokeWidth="2.5"
+                              stroke="#000"
+                              strokeWidth="2"
                               strokeLinecap="round"
                               strokeLinejoin="round"
                             />
+                            
+                            {/* Data points (small dots) */}
+                            {points.map((point, index) => (
+                              <circle
+                                key={`dot-${index}`}
+                                cx={point.x}
+                                cy={point.y}
+                                r={hoveredDataIndex === index ? 5 : 0}
+                                fill="#000"
+                                stroke="#fff"
+                                strokeWidth="2"
+                                style={{ transition: 'r 0.15s ease' }}
+                              />
+                            ))}
+                            
+                            {/* Hover vertical line */}
+                            {hoveredPoint && (
+                              <line
+                                x1={hoveredPoint.x}
+                                y1={paddingTop}
+                                x2={hoveredPoint.x}
+                                y2={height - paddingBottom}
+                                stroke="#000"
+                                strokeWidth="1"
+                                strokeOpacity="0.2"
+                              />
+                            )}
                             
                             {/* Invisible hover areas for better interaction */}
                             {points.map((point, index) => (
@@ -1097,41 +1317,39 @@ function DashboardContent() {
                     </svg>
                     
                     {/* Professional hover tooltip */}
-                    {hoveredDataIndex !== null && revenueChartData[hoveredDataIndex] && (
+                    {hoveredDataIndex !== null && chartData[hoveredDataIndex] && (
                       <div style={{
                         position: 'absolute',
-                        bottom: '30px',
-                        left: `${(hoveredDataIndex / (revenueChartData.length - 1)) * 100}%`,
-                        transform: 'translateX(-50%)',
-                        backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                        backdropFilter: 'blur(10px)',
-                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                        top: '20px',
+                        left: `${(hoveredDataIndex / Math.max(1, chartData.length - 1)) * 100}%`,
+                        transform: `translateX(${hoveredDataIndex > chartData.length / 2 ? '-100%' : '0'})`,
+                        backgroundColor: '#fff',
+                        border: '1px solid #e5e7eb',
                         borderRadius: '8px',
                         padding: '12px 16px',
-                        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-                        minWidth: '180px',
+                        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+                        minWidth: '160px',
                         zIndex: 10,
-                        transition: 'left 0.1s ease-out',
                         pointerEvents: 'none'
                       }}>
-                        <div style={{ fontSize: '0.75rem', color: '#6b7280', marginBottom: '8px' }}>
-                          {new Date(revenueChartData[hoveredDataIndex].date).toLocaleDateString('en-US', { 
+                        <div style={{ fontSize: '0.75rem', color: '#9ca3af', marginBottom: '8px', fontWeight: '500' }}>
+                          {new Date(chartData[hoveredDataIndex].date).toLocaleDateString('en-US', { 
+                            weekday: 'short',
                             month: 'short', 
-                            day: 'numeric',
-                            year: 'numeric'
+                            day: 'numeric'
                           })}
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <span style={{ fontSize: '0.875rem', color: '#374151', fontWeight: '500' }}>Revenue</span>
-                            <span style={{ fontSize: '1rem', color: '#60a5fa', fontWeight: '600' }}>
-                              ${revenueChartData[hoveredDataIndex].revenue.toFixed(2)}
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem' }}>
+                            <span style={{ fontSize: '0.875rem', color: '#6b7280' }}>Revenue</span>
+                            <span style={{ fontSize: '0.9375rem', color: '#000', fontWeight: '600' }}>
+                              ${chartData[hoveredDataIndex].revenue.toFixed(2)}
                             </span>
                           </div>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <span style={{ fontSize: '0.875rem', color: '#374151', fontWeight: '500' }}>Orders</span>
-                            <span style={{ fontSize: '1rem', color: '#10b981', fontWeight: '600' }}>
-                              {revenueChartData[hoveredDataIndex].orders}
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem' }}>
+                            <span style={{ fontSize: '0.875rem', color: '#6b7280' }}>Orders</span>
+                            <span style={{ fontSize: '0.9375rem', color: '#000', fontWeight: '600' }}>
+                              {chartData[hoveredDataIndex].orders}
                             </span>
                           </div>
                         </div>
@@ -1144,19 +1362,30 @@ function DashboardContent() {
                       justifyContent: 'space-between',
                       marginTop: '10px',
                       fontSize: '0.75rem',
-                      color: '#999',
+                      color: '#9ca3af',
                       paddingLeft: '10px',
                       paddingRight: '10px'
                     }}>
-                      {[0, Math.floor(revenueChartData.length / 3), Math.floor(revenueChartData.length * 2 / 3), revenueChartData.length - 1].map((index) => {
-                        const date = new Date(revenueChartData[index].date);
-                        return (
-                          <div key={index}>
-                            {date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                          </div>
-                        );
-                      })}
+                      {(() => {
+                        // Calculate unique indices for x-axis labels
+                        const len = chartData.length;
+                        const indices = len <= 4 
+                          ? Array.from({ length: len }, (_, i) => i)
+                          : [...new Set([0, Math.floor(len / 3), Math.floor(len * 2 / 3), len - 1])];
+                        
+                        return indices.map((index, i) => {
+                          const date = new Date(chartData[index].date);
+                          return (
+                            <div key={`xlabel-${i}-${index}`}>
+                              {date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                            </div>
+                          );
+                        });
+                      })()}
                     </div>
+                    </>
+                      );
+                    })()}
                   </div>
                 )}
               </div>
@@ -1164,68 +1393,84 @@ function DashboardContent() {
               {/* Latest Completed Orders */}
               <div style={{
                 backgroundColor: '#fff',
-                border: '1px solid #e0e0e0',
+                border: '1px solid #e5e7eb',
                 borderRadius: '12px',
                 padding: '1.5rem',
-                marginBottom: '2rem'
+                marginBottom: '1.5rem'
               }}>
-                <h3 style={{ fontSize: '1.125rem', fontWeight: '700', marginBottom: '1.5rem', color: '#000' }}>
-                  Latest Completed Orders
+                <h3 style={{ fontSize: '1rem', fontWeight: '600', marginBottom: '1rem', color: '#000' }}>
+                  Recent Orders
                 </h3>
                 <div style={{
                   textAlign: 'center',
-                  padding: '3rem 1rem',
-                  color: '#666',
-                  fontSize: '0.9rem'
+                  padding: '2.5rem 1rem',
+                  color: '#9ca3af',
+                  fontSize: '0.875rem'
                 }}>
-                  No completed orders yet
+                  <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginBottom: '0.75rem' }}>
+                    <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+                    <line x1="3" y1="6" x2="21" y2="6"></line>
+                    <path d="M16 10a4 4 0 0 1-8 0"></path>
+                  </svg>
+                  <div>No completed orders yet</div>
                 </div>
               </div>
 
               {/* Two Column Layout for Top Products and Customers */}
               <div style={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-                gap: '1.5rem',
+                gridTemplateColumns: 'repeat(2, 1fr)',
+                gap: '1rem',
                 marginBottom: '2rem'
               }}>
                 {/* Top 5 Products */}
                 <div style={{
                   backgroundColor: '#fff',
-                  border: '1px solid #e0e0e0',
+                  border: '1px solid #e5e7eb',
                   borderRadius: '12px',
                   padding: '1.5rem'
                 }}>
-                  <h3 style={{ fontSize: '1.125rem', fontWeight: '700', marginBottom: '1.5rem', color: '#000' }}>
-                    Top 5 Products
+                  <h3 style={{ fontSize: '1rem', fontWeight: '600', marginBottom: '1rem', color: '#000' }}>
+                    Top Products
                   </h3>
                   <div style={{
                     textAlign: 'center',
                     padding: '2rem 1rem',
-                    color: '#666',
-                    fontSize: '0.9rem'
+                    color: '#9ca3af',
+                    fontSize: '0.875rem'
                   }}>
-                    No products data yet
+                    <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginBottom: '0.75rem' }}>
+                      <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                      <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                      <line x1="12" y1="22.08" x2="12" y2="12"></line>
+                    </svg>
+                    <div>No products data yet</div>
                   </div>
                 </div>
 
                 {/* Top 5 Customers */}
                 <div style={{
                   backgroundColor: '#fff',
-                  border: '1px solid #e0e0e0',
+                  border: '1px solid #e5e7eb',
                   borderRadius: '12px',
                   padding: '1.5rem'
                 }}>
-                  <h3 style={{ fontSize: '1.125rem', fontWeight: '700', marginBottom: '1.5rem', color: '#000' }}>
-                    Top 5 Customers
+                  <h3 style={{ fontSize: '1rem', fontWeight: '600', marginBottom: '1rem', color: '#000' }}>
+                    Top Customers
                   </h3>
                   <div style={{
                     textAlign: 'center',
                     padding: '2rem 1rem',
-                    color: '#666',
-                    fontSize: '0.9rem'
+                    color: '#9ca3af',
+                    fontSize: '0.875rem'
                   }}>
-                    No customers data yet
+                    <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginBottom: '0.75rem' }}>
+                      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                      <circle cx="9" cy="7" r="4"></circle>
+                      <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                      <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                    </svg>
+                    <div>No customers data yet</div>
                   </div>
                 </div>
               </div>
@@ -1338,7 +1583,7 @@ function DashboardContent() {
                           </span>
                         ) : (
                           <a
-                            href={`https://discord.com/oauth2/authorize?client_id=${discordClientId || ''}&permissions=8&scope=bot%20applications.commands&guild_id=${guild.id}`}
+                            href={`https://discord.com/oauth2/authorize?client_id=${discordClientId || ''}&permissions=268520448&integration_type=0&scope=bot+applications.commands&guild_id=${guild.id}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             style={{

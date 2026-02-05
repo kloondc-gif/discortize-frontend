@@ -48,6 +48,28 @@ export default function InvoicesPage() {
   const [description, setDescription] = useState('');
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+
+  // Filter invoices based on search query
+  const filteredInvoices = invoices.filter(invoice => {
+    const query = searchQuery.toLowerCase();
+    return (
+      invoice.invoice_id.toLowerCase().includes(query) ||
+      (invoice.description && invoice.description.toLowerCase().includes(query))
+    );
+  });
+
+  // Pagination calculations
+  const totalPages = Math.ceil(filteredInvoices.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedInvoices = filteredInvoices.slice(startIndex, startIndex + itemsPerPage);
+
+  // Reset to page 1 when search changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery]);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -556,6 +578,30 @@ export default function InvoicesPage() {
         </Link>
 
         <Link
+          href="/dashboard/payouts"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.75rem',
+            padding: '0.75rem 1rem',
+            color: '#000',
+            textDecoration: 'none',
+            fontSize: '1.1rem',
+            fontWeight: '700',
+            borderRadius: '16px',
+            transition: 'background-color 0.2s'
+          }}
+          onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#f5f5f5'}
+          onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="12" y1="1" x2="12" y2="23"/>
+            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+          </svg>
+          Payouts
+        </Link>
+
+        <Link
           href="/dashboard/plans"
           style={{
             display: 'flex',
@@ -669,6 +715,72 @@ export default function InvoicesPage() {
           </button>
         </div>
 
+        {/* Search Bar */}
+        <div style={{ marginBottom: '1.5rem' }}>
+          <div style={{ position: 'relative', maxWidth: '400px' }}>
+            <svg 
+              width="18" 
+              height="18" 
+              viewBox="0 0 24 24" 
+              fill="none" 
+              stroke="#999" 
+              strokeWidth="2" 
+              strokeLinecap="round" 
+              strokeLinejoin="round"
+              style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }}
+            >
+              <circle cx="11" cy="11" r="8"/>
+              <path d="m21 21-4.35-4.35"/>
+            </svg>
+            <input
+              type="text"
+              placeholder="Search by Invoice ID or description..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '0.75rem 1rem 0.75rem 42px',
+                borderRadius: '8px',
+                border: '1px solid #e0e0e0',
+                fontSize: '0.9rem',
+                outline: 'none',
+                transition: 'border-color 0.2s'
+              }}
+              onFocus={(e) => e.currentTarget.style.borderColor = '#000'}
+              onBlur={(e) => e.currentTarget.style.borderColor = '#e0e0e0'}
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                style={{
+                  position: 'absolute',
+                  right: '12px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  color: '#999',
+                  padding: '2px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18"/>
+                  <line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+              </button>
+            )}
+          </div>
+          {searchQuery && (
+            <div style={{ marginTop: '0.5rem', fontSize: '0.875rem', color: '#666' }}>
+              Found {filteredInvoices.length} invoice{filteredInvoices.length !== 1 ? 's' : ''}
+            </div>
+          )}
+        </div>
+
         {configuredCoins.length === 0 && (
           <div style={{ 
             padding: '1rem 1.5rem', 
@@ -720,7 +832,22 @@ export default function InvoicesPage() {
               <p style={{ color: '#999', fontSize: '0.9rem', margin: 0 }}>Create your first invoice to get started</p>
             )}
           </div>
+        ) : filteredInvoices.length === 0 ? (
+          <div style={{ 
+            textAlign: 'center', 
+            padding: '3rem 2rem',
+            backgroundColor: '#f9f9f9',
+            borderRadius: '8px'
+          }}>
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#ccc" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginBottom: '1rem' }}>
+              <circle cx="11" cy="11" r="8"/>
+              <path d="m21 21-4.35-4.35"/>
+            </svg>
+            <p style={{ fontSize: '1rem', color: '#666', margin: '0.5rem 0' }}>No invoices match your search</p>
+            <p style={{ color: '#999', fontSize: '0.9rem', margin: 0 }}>Try a different search term</p>
+          </div>
         ) : (
+          <>
           <div style={{ 
             backgroundColor: '#fff', 
             borderRadius: '8px', 
@@ -742,7 +869,7 @@ export default function InvoicesPage() {
                 </tr>
               </thead>
               <tbody>
-                {invoices.map((invoice) => {
+                {paginatedInvoices.map((invoice) => {
                   const expired = invoice.expires_at && isExpired(invoice.expires_at);
                   const isPending = invoice.status === 'pending';
                   const finalStatus = expired && isPending ? 'expired' : invoice.status;
@@ -903,6 +1030,121 @@ export default function InvoicesPage() {
               </tbody>
             </table>
           </div>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginTop: '1.5rem',
+              padding: '1rem',
+              backgroundColor: '#f9f9f9',
+              borderRadius: '8px'
+            }}>
+              <div style={{ fontSize: '0.875rem', color: '#666' }}>
+                Showing {startIndex + 1}-{Math.min(startIndex + itemsPerPage, filteredInvoices.length)} of {filteredInvoices.length}
+              </div>
+              <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                <button
+                  onClick={() => setCurrentPage(1)}
+                  disabled={currentPage === 1}
+                  style={{
+                    padding: '0.5rem 0.75rem',
+                    backgroundColor: currentPage === 1 ? '#e0e0e0' : '#fff',
+                    border: '1px solid #e0e0e0',
+                    borderRadius: '6px',
+                    cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
+                    fontSize: '0.875rem',
+                    color: currentPage === 1 ? '#999' : '#000'
+                  }}
+                >
+                  First
+                </button>
+                <button
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  style={{
+                    padding: '0.5rem 0.75rem',
+                    backgroundColor: currentPage === 1 ? '#e0e0e0' : '#fff',
+                    border: '1px solid #e0e0e0',
+                    borderRadius: '6px',
+                    cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
+                    fontSize: '0.875rem',
+                    color: currentPage === 1 ? '#999' : '#000'
+                  }}
+                >
+                  ← Prev
+                </button>
+                <div style={{
+                  display: 'flex',
+                  gap: '0.25rem'
+                }}>
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    let pageNum;
+                    if (totalPages <= 5) {
+                      pageNum = i + 1;
+                    } else if (currentPage <= 3) {
+                      pageNum = i + 1;
+                    } else if (currentPage >= totalPages - 2) {
+                      pageNum = totalPages - 4 + i;
+                    } else {
+                      pageNum = currentPage - 2 + i;
+                    }
+                    return (
+                      <button
+                        key={pageNum}
+                        onClick={() => setCurrentPage(pageNum)}
+                        style={{
+                          padding: '0.5rem 0.875rem',
+                          backgroundColor: currentPage === pageNum ? '#000' : '#fff',
+                          color: currentPage === pageNum ? '#fff' : '#000',
+                          border: '1px solid #e0e0e0',
+                          borderRadius: '6px',
+                          cursor: 'pointer',
+                          fontSize: '0.875rem',
+                          fontWeight: currentPage === pageNum ? '600' : '400'
+                        }}
+                      >
+                        {pageNum}
+                      </button>
+                    );
+                  })}
+                </div>
+                <button
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                  style={{
+                    padding: '0.5rem 0.75rem',
+                    backgroundColor: currentPage === totalPages ? '#e0e0e0' : '#fff',
+                    border: '1px solid #e0e0e0',
+                    borderRadius: '6px',
+                    cursor: currentPage === totalPages ? 'not-allowed' : 'pointer',
+                    fontSize: '0.875rem',
+                    color: currentPage === totalPages ? '#999' : '#000'
+                  }}
+                >
+                  Next →
+                </button>
+                <button
+                  onClick={() => setCurrentPage(totalPages)}
+                  disabled={currentPage === totalPages}
+                  style={{
+                    padding: '0.5rem 0.75rem',
+                    backgroundColor: currentPage === totalPages ? '#e0e0e0' : '#fff',
+                    border: '1px solid #e0e0e0',
+                    borderRadius: '6px',
+                    cursor: currentPage === totalPages ? 'not-allowed' : 'pointer',
+                    fontSize: '0.875rem',
+                    color: currentPage === totalPages ? '#999' : '#000'
+                  }}
+                >
+                  Last
+                </button>
+              </div>
+            </div>
+          )}
+          </>
         )}
       </div>
     </main>

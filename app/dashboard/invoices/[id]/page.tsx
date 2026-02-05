@@ -425,6 +425,30 @@ export default function InvoiceDetailPage() {
           </Link>
 
           <Link
+            href="/dashboard/payouts"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.75rem',
+              padding: '0.75rem 1rem',
+              color: '#000',
+              textDecoration: 'none',
+              fontSize: '1.1rem',
+              fontWeight: '700',
+              borderRadius: '16px',
+              transition: 'background-color 0.2s'
+            }}
+            onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#f5f5f5'}
+            onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="12" y1="1" x2="12" y2="23"/>
+              <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+            </svg>
+            Payouts
+          </Link>
+
+          <Link
             href="/dashboard/plans"
             style={{
               display: 'flex',
